@@ -1,0 +1,2310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Salão de Beleza & Estética — v5.3</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none;}
+html,body{width:100%;height:100%;overflow:hidden;background:#1a1016;color:#fce7f3;touch-action:none;overscroll-behavior:none;position:fixed;}
+#game-container{position:fixed;inset:0;background:#000;overflow:hidden;}
+#game-container canvas{width:100%;height:100%;display:block;}
+.hud{position:absolute;top:calc(env(safe-area-inset-top,0px) + 8px);left:8px;right:8px;display:flex;justify-content:space-between;gap:4px;pointer-events:none;z-index:10;}
+.hud-box{background:rgba(26,16,22,.85);padding:4px 6px;border-radius:8px;border-left:3px solid #ec4899;backdrop-filter:blur(6px);min-width:0;flex:1;}
+.hud-box .label{font-size:.5rem;color:#f472b6;text-transform:uppercase;white-space:nowrap;}
+.hud-box .value{font-size:.78rem;color:#ec4899;font-weight:bold;line-height:1.1;white-space:nowrap;}
+.hud-box.rep .value{color:#4ade80;}
+.hud-box.time .value.low{color:#f87171;animation:pulse 1s infinite;}
+.hud-box.clock .value{color:#60a5fa;}
+.hud-box.maint .value{color:#f59e0b;}
+.hud-box.zone .value{color:#22d3ee;font-size:.7rem;}
+.top-actions{position:absolute;top:calc(env(safe-area-inset-top,0px) + 58px);left:8px;z-index:20;display:flex;gap:6px;flex-wrap:wrap;max-width:75%;}
+.top-btn{width:38px;height:38px;border-radius:50%;background:rgba(26,16,22,.85);border:1px solid rgba(236,72,153,.5);color:#ec4899;font-size:1rem;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:pointer;position:relative;}
+.top-btn:active{transform:scale(.9);}
+.top-btn .badge{position:absolute;top:-4px;right:-4px;background:#f87171;color:#fff;font-size:.55rem;font-weight:bold;min-width:16px;height:16px;border-radius:8px;padding:0 4px;display:flex;align-items:center;justify-content:center;}
+.top-btn.closed{background:rgba(120,53,15,.9);border-color:#f59e0b;color:#f59e0b;}
+.top-btn.muted{opacity:.5;}
+.top-btn.debug-on{background:rgba(8,145,178,.9);border-color:#22d3ee;color:#e0f2fe;}
+#cam-btn{position:absolute;top:calc(env(safe-area-inset-top,0px) + 58px);right:8px;z-index:20;width:38px;height:38px;border-radius:50%;background:rgba(26,16,22,.85);border:1px solid rgba(236,72,153,.5);color:#ec4899;font-size:1rem;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:pointer;}
+#cam-btn:active{transform:scale(.9);}
+#weather-badge{position:absolute;top:calc(env(safe-area-inset-top,0px) + 64px);left:50%;transform:translateX(-50%);z-index:12;background:rgba(26,16,22,.9);border:1px solid rgba(236,72,153,.5);padding:4px 10px;border-radius:16px;font-size:.7rem;color:#ec4899;font-weight:bold;display:none;align-items:center;gap:5px;white-space:nowrap;pointer-events:none;}
+#weather-badge.show{display:flex;}
+#day-banner{position:absolute;top:26%;left:50%;transform:translateX(-50%);z-index:40;opacity:0;pointer-events:none;text-align:center;background:rgba(26,16,22,.92);border:2px solid #ec4899;border-radius:14px;padding:12px 18px;max-width:88%;}
+#day-banner .t{font-size:1.1rem;color:#ec4899;font-weight:bold;}
+#day-banner .e{font-size:.8rem;color:#fce7f3;margin-top:4px;}
+#day-banner .g{font-size:.72rem;color:#4ade80;margin-top:4px;}
+#day-banner.show{animation:bannerAnim 3.8s ease forwards;}
+@keyframes bannerAnim{0%{opacity:0;transform:translate(-50%,-10px);}10%,80%{opacity:1;transform:translate(-50%,0);}100%{opacity:0;transform:translate(-50%,0);}}
+#joystick-zone{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);left:18px;width:120px;height:120px;z-index:20;touch-action:none;}
+#joystick-base{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(236,72,153,.15) 0%,rgba(0,0,0,.6) 70%);border:2px solid rgba(236,72,153,.5);}
+#joystick-stick{position:absolute;top:50%;left:50%;width:52px;height:52px;margin:-26px 0 0 -26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f472b6,#ec4899 60%,#be185d);box-shadow:0 4px 12px rgba(0,0,0,.7);pointer-events:none;}
+#action-btn{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);right:20px;width:86px;height:86px;border-radius:50%;z-index:20;background:radial-gradient(circle at 35% 30%,#f472b6,#ec4899 55%,#be185d);border:3px solid rgba(255,255,255,.25);box-shadow:0 6px 20px rgba(0,0,0,.7),0 0 0 6px rgba(236,72,153,.15);display:flex;align-items:center;justify-content:center;font-size:1.8rem;color:#1a1016;touch-action:none;cursor:pointer;transition:transform .08s;}
+#action-btn.active{transform:scale(.9);}
+#action-btn.disabled{opacity:.3;filter:grayscale(.8);}
+#action-btn.store-mode{background:radial-gradient(circle at 35% 30%,#fbcfe8,#db2777 55%,#9d174d);box-shadow:0 6px 20px rgba(0,0,0,.7),0 0 0 6px rgba(219,39,119,.2);}
+#action-btn.delivery-mode{background:radial-gradient(circle at 35% 30%,#8ab4ff,#3b82f6 55%,#1e40af);}
+#action-btn.service-mode{background:radial-gradient(circle at 35% 30%,#fde68a,#f59e0b 55%,#b45309);}
+#action-btn.maint-mode{background:radial-gradient(circle at 35% 30%,#fbbf24,#d97706 55%,#92400e);}
+#action-btn.admin-mode{background:radial-gradient(circle at 35% 30%,#67e8f9,#0891b2 55%,#155e75);}
+#kitchen-panel{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 130px);left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;z-index:25;background:rgba(26,16,22,.95);padding:10px;border-radius:12px;border:1px solid rgba(236,72,153,.4);max-width:94vw;}
+#kit-title{font-size:.6rem;color:#f472b6;text-transform:uppercase;}
+#kit-steps{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:90vw;}
+#kit-steps .slot{width:36px;height:36px;border-radius:8px;border:2px dashed #555;display:flex;align-items:center;justify-content:center;font-size:1.1rem;opacity:.55;flex-shrink:0;}
+#kit-steps .slot.next{border:2px solid #ec4899;opacity:1;animation:pulse 1s infinite;}
+#kit-steps .slot.done{border:2px solid #4ade80;background:rgba(74,222,128,.18);opacity:1;}
+#kit-btns{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;}
+#kitchen-panel .kit-btn{min-width:56px;height:56px;padding:0 6px;border-radius:10px;background:linear-gradient(180deg,#3a2a35,#231520);border:1px solid rgba(236,72,153,.4);color:#fce7f3;font-size:1.2rem;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;touch-action:none;transition:transform .08s;}
+#kitchen-panel .kit-btn:active{transform:scale(.9);}
+#kitchen-panel .kit-btn .lbl{font-size:.42rem;color:#f472b6;margin-top:1px;}
+#kit-cancel{font-size:.65rem;color:#f472b6;border:1px solid #555;border-radius:12px;padding:3px 12px;cursor:pointer;touch-action:none;}
+#fuel-minigame{display:none;flex-direction:column;align-items:center;gap:8px;width:min(78vw,340px);}
+#fuel-minigame.show{display:flex;}
+#fuel-bar-wrap{position:relative;width:100%;height:38px;background:linear-gradient(90deg,#2a1a24,#3a2a35);border-radius:8px;border:2px solid #555;overflow:hidden;}
+#fuel-bar-zone{position:absolute;top:0;bottom:0;background:linear-gradient(180deg,rgba(74,222,128,.65),rgba(34,197,94,.9));border-left:2px solid #4ade80;border-right:2px solid #4ade80;}
+#fuel-bar-indicator{position:absolute;top:0;bottom:0;width:4px;background:#fff;box-shadow:0 0 10px #fff,0 0 20px #ec4899;border-radius:2px;}
+#fuel-stop-btn{width:100%;height:44px;border-radius:10px;background:linear-gradient(180deg,#f472b6,#ec4899);color:#1a1016;font-weight:bold;font-size:1rem;border:none;cursor:pointer;touch-action:none;}
+#fuel-minigame .tip{font-size:.62rem;color:#f472b6;text-align:center;}
+#hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 200px);transform:translateX(-50%);background:rgba(236,72,153,.95);color:#1a1016;padding:7px 16px;border-radius:20px;font-size:.8rem;font-weight:bold;white-space:nowrap;display:none;z-index:15;pointer-events:none;}
+#order-bubble{position:absolute;top:calc(env(safe-area-inset-top,0px) + 105px);left:50%;transform:translateX(-50%);background:rgba(26,16,22,.95);color:#fff;padding:8px 14px;border-radius:14px;border:2px solid #ec4899;display:none;z-index:15;max-width:90%;text-align:center;}
+#order-bubble.store{border-color:#db2777;}
+#order-bubble.delivery{border-color:#3b82f6;}
+#order-bubble.vip{border-color:#a78bfa;}
+#order-bubble.service{border-color:#f59e0b;}
+#order-bubble .ttl{font-size:.6rem;color:#f472b6;text-transform:uppercase;}
+#order-bubble .itm{font-size:.9rem;color:#ec4899;font-weight:bold;margin-top:2px;}
+#order-bubble.store .itm{color:#f472b6;}
+#order-bubble.delivery .itm{color:#93c5fd;}
+#order-bubble.vip .itm{color:#c4b5fd;}
+#order-bubble.service .itm{color:#fcd34d;}
+#order-bubble .prc{font-size:.75rem;color:#4ade80;margin-top:1px;}
+#order-bubble .req{font-size:.62rem;color:#fce7f3;margin-top:4px;}
+.float-msg{position:absolute;font-weight:bold;font-size:.9rem;text-shadow:0 2px 6px rgba(0,0,0,.9);pointer-events:none;z-index:30;animation:floatUp 1.6s ease-out forwards;white-space:nowrap;}
+.float-msg.gain{color:#4ade80;}
+.float-msg.loss{color:#f87171;}
+.float-msg.info{color:#ec4899;}
+.float-msg.store{color:#f472b6;}
+.float-msg.delivery{color:#93c5fd;}
+.float-msg.vip{color:#a78bfa;}
+.float-msg.service{color:#fcd34d;}
+.float-msg.maint{color:#fbbf24;}
+.float-msg.theft{color:#ef4444;font-size:1.05rem;}
+@keyframes floatUp{0%{opacity:1;transform:translate(-50%,0) scale(.8);}30%{opacity:1;transform:translate(-50%,-30px) scale(1.15);}100%{opacity:0;transform:translate(-50%,-90px) scale(1);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.5;}}
+@keyframes popIn{0%{transform:scale(.8);opacity:0;}100%{transform:scale(1);opacity:1;}}
+#tutorial-overlay{position:absolute;inset:0;z-index:105;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:20px;text-align:center;pointer-events:none;}
+#tutorial-overlay.show{display:flex;}
+#tutorial-box{background:rgba(26,16,22,.98);border:2px solid #ec4899;border-radius:16px;padding:18px 20px;max-width:340px;pointer-events:auto;animation:popIn .3s ease-out;}
+#tutorial-box .ttl{font-size:.65rem;color:#ec4899;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;}
+#tutorial-box .msg{font-size:.85rem;color:#fce7f3;line-height:1.5;margin-bottom:14px;}
+#tutorial-box .msg .k{background:#ec4899;color:#1a1016;font-weight:bold;padding:2px 8px;border-radius:6px;font-size:.75rem;margin:0 2px;display:inline-block;}
+#tutorial-box .row{display:flex;gap:8px;justify-content:center;}
+#tutorial-box button{background:linear-gradient(180deg,#f472b6,#ec4899);color:#1a1016;border:none;padding:10px 24px;border-radius:30px;font-size:.85rem;font-weight:bold;cursor:pointer;}
+#tutorial-box button.skip{background:transparent;border:1px solid #555;color:#f472b6;}
+#tutorial-box .progress{display:flex;gap:4px;justify-content:center;margin-bottom:12px;}
+#tutorial-box .dot{width:6px;height:6px;border-radius:50%;background:#333;}
+#tutorial-box .dot.active{background:#ec4899;}
+#tutorial-box .dot.done{background:#4ade80;}
+#welcome{position:absolute;inset:0;z-index:100;background:rgba(26,16,22,.98);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px;text-align:center;transition:opacity .4s;overflow-y:auto;}
+#welcome h1{color:#ec4899;font-size:1.5rem;letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;}
+#welcome p{color:#f472b6;font-size:.78rem;margin-bottom:16px;max-width:340px;line-height:1.5;}
+#welcome .icon{font-size:2.8rem;margin-bottom:8px;}
+#welcome .btn-row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+#start-btn,#tutorial-btn{background:linear-gradient(180deg,#f472b6,#ec4899);color:#1a1016;border:none;padding:14px 32px;border-radius:40px;font-size:.95rem;font-weight:bold;box-shadow:0 6px 20px rgba(236,72,153,.4);cursor:pointer;}
+#tutorial-btn{background:transparent;border:2px solid #ec4899;color:#ec4899;box-shadow:none;}
+#welcome .save-info{margin-top:12px;font-size:.7rem;color:#ec4899;}
+#welcome .version{margin-top:16px;font-size:.6rem;color:#555;}
+.modal{position:absolute;inset:0;z-index:110;background:rgba(26,16,22,.97);display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding:20px;text-align:center;overflow-y:auto;}
+.modal.open{display:flex;}
+.modal h2{color:#ec4899;font-size:1.2rem;margin-bottom:14px;flex-shrink:0;}
+.modal .stat{display:flex;justify-content:space-between;width:100%;max-width:300px;padding:6px 0;border-bottom:1px solid #3a2a35;font-size:.83rem;margin:0 auto;}
+.modal .stat .v{color:#4ade80;font-weight:bold;}
+.modal .stat .v.neg{color:#f87171;}
+.modal .stat .v.warn{color:#ec4899;}
+.modal button{margin-top:10px;background:linear-gradient(180deg,#f472b6,#ec4899);color:#1a1016;border:none;padding:12px 32px;border-radius:40px;font-size:.9rem;font-weight:bold;cursor:pointer;}
+.modal button.sec{background:transparent;border:1px solid #ec4899;color:#ec4899;}
+.modal .row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:12px;}
+.modal .content{width:100%;max-width:420px;flex:1;}
+#admin-modal{background:rgba(10,5,15,.98);}
+#admin-modal .terminal{width:100%;max-width:480px;background:#140a1c;border:2px solid #db2777;border-radius:12px;padding:16px;font-family:'Courier New',monospace;text-align:left;}
+#admin-modal .term-header{display:flex;justify-content:space-between;color:#f472b6;font-size:.85rem;font-weight:bold;border-bottom:1px solid #9d174d;padding-bottom:8px;margin-bottom:12px;}
+#admin-modal .term-header .led{width:8px;height:8px;border-radius:50%;background:#ec4899;box-shadow:0 0 10px #ec4899;animation:pulse 1.5s infinite;display:inline-block;margin-right:6px;}
+#admin-modal .term-row{display:flex;justify-content:space-between;font-size:.75rem;padding:5px 0;color:#fbcfe8;border-bottom:1px dashed #581c87;}
+#admin-modal .term-row .val{color:#f472b6;font-weight:bold;}
+#admin-modal .term-row .val.good{color:#4ade80;}
+#admin-modal .term-row .val.warn{color:#fbbf24;}
+#admin-modal .term-section{margin-top:14px;color:#f472b6;font-size:.75rem;text-transform:uppercase;}
+#admin-modal .term-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+#admin-modal .term-btn{background:linear-gradient(180deg,#9d174d,#831843);border:1px solid #ec4899;color:#fce7f3;border-radius:8px;padding:10px;font-size:.72rem;font-weight:bold;cursor:pointer;font-family:inherit;text-align:left;}
+#admin-modal .term-btn .ico{font-size:1.1rem;display:block;margin-bottom:2px;}
+#admin-modal .exit-btn{width:100%;margin-top:16px;background:linear-gradient(180deg,#7f1d1d,#991b1b);border:1px solid #ef4444;color:#fecaca;border-radius:8px;padding:12px;font-size:.85rem;font-weight:bold;cursor:pointer;font-family:inherit;}
+.shop-item,.upgrade-item{background:rgba(255,255,255,.04);border:1px solid #3a2a35;border-radius:10px;padding:10px 12px;margin-bottom:8px;width:100%;display:flex;align-items:center;gap:10px;text-align:left;}
+.shop-item .ico,.upgrade-item .head .ico{font-size:1.6rem;}
+.shop-item .info{flex:1;min-width:0;}
+.shop-item .name{font-size:.85rem;color:#fce7f3;font-weight:bold;}
+.shop-item .sub{font-size:.68rem;color:#f472b6;margin-top:2px;}
+.shop-item .buy-btn,.upgrade-item .buy-btn{background:linear-gradient(180deg,#f472b6,#ec4899);color:#1a1016;border:none;border-radius:8px;padding:8px 12px;font-size:.72rem;font-weight:bold;cursor:pointer;min-width:70px;}
+.shop-item .buy-btn:disabled,.upgrade-item .buy-btn:disabled{opacity:.4;}
+.upgrade-item{display:block;}
+.upgrade-item .head{display:flex;align-items:center;gap:10px;margin-bottom:6px;}
+.upgrade-item .head .name{font-size:.88rem;color:#ec4899;font-weight:bold;flex:1;}
+.upgrade-item .head .lvl{font-size:.68rem;color:#4ade80;font-weight:bold;}
+.upgrade-item .desc{font-size:.7rem;color:#fce7f3;margin-bottom:8px;line-height:1.4;}
+.upgrade-item .foot{display:flex;justify-content:space-between;align-items:center;}
+.upgrade-item .price{font-size:.78rem;color:#ec4899;font-weight:bold;}
+.upgrade-item .contracts{display:flex;gap:6px;margin-top:8px;}
+.upgrade-item .contracts button{flex:1;background:linear-gradient(180deg,#f472b6,#ec4899);color:#1a1016;border:none;border-radius:8px;padding:8px 4px;font-size:.7rem;font-weight:bold;cursor:pointer;margin:0;line-height:1.25;}
+.upgrade-item .contracts button.week{background:linear-gradient(180deg,#a7f3d0,#10b981);}
+.upgrade-item .contracts button small{display:block;font-size:.55rem;opacity:.75;font-weight:normal;}
+.tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;justify-content:center;}
+.tab{padding:8px 12px;border-radius:20px;font-size:.68rem;font-weight:bold;background:rgba(255,255,255,.05);color:#f472b6;border:1px solid #3a2a35;cursor:pointer;}
+.tab.active{background:#ec4899;color:#1a1016;border-color:#ec4899;}
+.ach-item{background:rgba(255,255,255,.04);border:1px solid #3a2a35;border-radius:10px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;text-align:left;}
+.ach-item.unlocked{border-color:#ffd700;background:rgba(255,215,0,.08);}
+.ach-item .ico{font-size:1.6rem;filter:grayscale(1);opacity:.4;}
+.ach-item.unlocked .ico{filter:none;opacity:1;}
+.ach-item .info{flex:1;}
+.ach-item .name{font-size:.83rem;color:#fce7f3;font-weight:bold;}
+.ach-item.unlocked .name{color:#ffd700;}
+.ach-item .desc{font-size:.68rem;color:#f472b6;margin-top:2px;}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #3a2a35;font-size:.83rem;}
+.stat-row .lbl{color:#f472b6;}
+.stat-row .val{color:#ec4899;font-weight:bold;}
+.notif-badge{position:absolute;top:calc(env(safe-area-inset-top,0px) + 105px);right:10px;background:#f87171;color:#fff;padding:6px 10px;border-radius:20px;font-size:.7rem;font-weight:bold;z-index:18;display:none;animation:pulse 1.2s infinite;pointer-events:none;}
+.notif-badge.show{display:flex;}
+#delivery-bar{position:absolute;top:calc(env(safe-area-inset-top,0px) + 145px);left:8px;right:8px;z-index:14;display:none;flex-direction:column;gap:4px;pointer-events:none;max-width:220px;}
+.delivery-item{background:rgba(219,39,119,.85);border:1px solid #f472b6;border-radius:10px;padding:6px 10px;font-size:.68rem;color:#fce7f3;display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.delivery-item .tm{color:#fbcfe8;font-weight:bold;}
+.delivery-item.late{border-color:#f87171;background:rgba(127,29,29,.85);}
+body.fp-mode #joystick-zone{opacity:.5;}
+body.fp-mode #kitchen-panel{display:none!important;}
+#fp-crosshair{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:22;display:none;width:20px;height:20px;pointer-events:none;}
+#fp-crosshair.show{display:block;}
+#fp-crosshair::before,#fp-crosshair::after{content:'';position:absolute;background:rgba(255,255,255,.7);}
+#fp-crosshair::before{top:9px;left:0;width:20px;height:2px;}
+#fp-crosshair::after{top:0;left:9px;width:2px;height:20px;}
+#fp-badge{position:absolute;top:calc(env(safe-area-inset-top,0px) + 60px);left:50%;transform:translateX(-50%);background:rgba(8,145,178,.9);color:#e0f2fe;padding:6px 14px;border-radius:20px;font-size:.7rem;font-weight:bold;display:none;z-index:14;border:1px solid #22d3ee;}
+#fp-badge.show{display:block;}
+#maint-panel{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 130px);left:50%;transform:translateX(-50%);display:none;flex-direction:column;align-items:center;gap:8px;z-index:25;background:rgba(26,16,22,.95);padding:12px 18px;border-radius:12px;border:2px solid #f59e0b;min-width:220px;}
+#maint-panel.show{display:flex;}
+#maint-panel .lbl{font-size:.7rem;color:#fbbf24;font-weight:bold;text-transform:uppercase;}
+#maint-progress-wrap{width:200px;height:10px;background:#333;border-radius:5px;overflow:hidden;border:1px solid #555;}
+#maint-progress{height:100%;background:linear-gradient(90deg,#f59e0b,#fbbf24);width:0%;transition:width .1s;}
+#maint-panel .hint{font-size:.6rem;color:#f472b6;}
+#track-name{position:absolute;bottom:calc(env(safe-area-inset-bottom,0px) + 130px);right:20px;background:rgba(8,145,178,.85);color:#e0f2fe;padding:4px 10px;border-radius:14px;font-size:.6rem;font-weight:bold;display:none;z-index:14;border:1px solid #22d3ee;opacity:0;transition:opacity .3s;}
+#track-name.show{display:block;opacity:1;}
+#debug-panel{position:absolute;top:calc(env(safe-area-inset-top,0px) + 130px);right:8px;background:rgba(8,145,178,.9);color:#e0f2fe;padding:8px 12px;border-radius:8px;font-family:'Courier New',monospace;font-size:.65rem;line-height:1.4;display:none;z-index:19;border:1px solid #22d3ee;max-width:180px;pointer-events:none;}
+#debug-panel.show{display:block;}
+#debug-panel .lbl{color:#67e8f9;font-weight:bold;}
+#debug-panel .v{color:#fff;}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+</head>
+<body>
+<div id="game-container">
+  <div class="hud">
+    <div class="hud-box"><div class="label">💰 Caixa</div><div class="value" id="hud-money">R$ 500</div></div>
+    <div class="hud-box rep"><div class="label">⭐ Rep</div><div class="value" id="hud-rep">50</div></div>
+    <div class="hud-box"><div class="label">💇 Atend.</div><div class="value" id="hud-served">0</div></div>
+    <div class="hud-box"><div class="label">🎯 Meta</div><div class="value" id="hud-goal">R$ 800</div></div>
+    <div class="hud-box time"><div class="label">⏱ Tempo</div><div class="value" id="hud-time">3:00</div></div>
+    <div class="hud-box clock"><div class="label">🕐 Hora</div><div class="value" id="hud-clock">09:00</div></div>
+    <div class="hud-box maint"><div class="label">🧹 Limpeza</div><div class="value" id="hud-maint">0</div></div>
+    <div class="hud-box zone"><div class="label">📍 Zona</div><div class="value" id="hud-zone">Salão</div></div>
+  </div>
+
+  <div id="weather-badge"><span id="weather-icon">✨</span><span id="weather-text">Dia calmo</span></div>
+  <div id="day-banner"></div>
+  <div class="notif-badge" id="notif-badge">🔔 <span id="notif-text">Notificação de Agendamento</span></div>
+  <div id="delivery-bar"></div>
+  <div id="fp-badge">💻 Administração do Salão — ESC para sair</div>
+  <div id="fp-crosshair"></div>
+  <div id="track-name">🎵 <span id="track-name-text">Bossa Lounge</span></div>
+  <div id="debug-panel">
+    <div><span class="lbl">POS</span> <span class="v" id="dbg-pos">0.0, 0.0</span></div>
+    <div><span class="lbl">ZONE</span> <span class="v" id="dbg-zone">salon</span></div>
+    <div><span class="lbl">TARGET</span> <span class="v" id="dbg-target">—</span></div>
+    <div><span class="lbl">CLIENTS</span> <span class="v" id="dbg-cars">0</span></div>
+    <div><span class="lbl">DOORS</span> <span class="v" id="dbg-doors">0</span></div>
+    <div><span class="lbl">COLS</span> <span class="v" id="dbg-cols">0</span></div>
+  </div>
+
+  <div class="top-actions">
+    <div class="top-btn" id="menu-btn">☰</div>
+    <div class="top-btn" id="openclose-btn">🟢</div>
+    <div class="top-btn" id="music-btn">🎵</div>
+    <div class="top-btn" id="shop-btn">🛒<span class="badge" id="stock-badge" style="display:none">!</span></div>
+    <div class="top-btn" id="ach-btn">🏆</div>
+    <div class="top-btn" id="office-btn">💼</div>
+    <div class="top-btn" id="rooms-btn" title="Salas para alugar">🏠</div>
+    <div class="top-btn" id="debug-btn">🐞</div>
+  </div>
+
+  <div id="cam-btn">🎥</div>
+
+  <div id="order-bubble">
+    <div class="ttl" id="order-ttl">Serviço</div>
+    <div class="itm" id="order-item">—</div>
+    <div class="prc" id="order-price">R$ 0,00</div>
+    <div class="req" id="order-req"></div>
+  </div>
+
+  <div id="joystick-zone"><div id="joystick-base"></div><div id="joystick-stick"></div></div>
+
+  <div id="kitchen-panel">
+    <div id="kit-title">Procedimento</div>
+    <div id="kit-steps"></div>
+    <div id="kit-btns"></div>
+    <div id="fuel-minigame">
+      <div id="fuel-bar-wrap">
+        <div id="fuel-bar-zone"></div>
+        <div id="fuel-bar-indicator"></div>
+      </div>
+      <div class="tip" id="fuel-tip">Pare no ponto ideal</div>
+      <button id="fuel-stop-btn">✨ APLICAR</button>
+    </div>
+    <div id="kit-cancel">✖ Cancelar</div>
+  </div>
+
+  <div id="maint-panel">
+    <div class="lbl" id="maint-lbl">Limpeza</div>
+    <div id="maint-progress-wrap"><div id="maint-progress"></div></div>
+    <div class="hint">Segure o botão ✨ para completar</div>
+  </div>
+
+  <div id="action-btn">✨</div>
+  <div id="hint">Aproxime-se</div>
+
+  <div id="tutorial-overlay">
+    <div id="tutorial-box">
+      <div class="progress" id="tutorial-progress"></div>
+      <div class="ttl" id="tutorial-ttl">Passo 1</div>
+      <div class="msg" id="tutorial-msg">Bem-vindo ao Salão!</div>
+      <div class="row">
+        <button class="skip" id="tutorial-skip">Pular</button>
+        <button id="tutorial-next">Continuar ▶</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="welcome">
+    <div class="icon">💇‍♀️💅✨</div>
+    <h1>Salão de Beleza & Estética</h1>
+    <p>Agendamentos por notificação e clientes presenciais. Desbloqueie cadeiras, macas e expanda seu império da beleza!</p>
+    <div class="btn-row">
+      <button id="start-btn">▶ JOGAR</button>
+      <button id="tutorial-btn">📖 TUTORIAL</button>
+    </div>
+    <div class="save-info" id="save-info"></div>
+    <div class="version">v5.4 · expansão de salas e aluguel semanal</div>
+  </div>
+
+  <div class="modal" id="menu-modal">
+    <h2>📋 Menu</h2>
+    <div class="content">
+      <div class="stat"><span>Dia</span><span class="v" id="menu-day">1</span></div>
+      <div class="stat"><span>Tempo restante</span><span class="v" id="menu-time">3:00</span></div>
+      <div class="stat"><span>Hora do dia</span><span class="v" id="menu-clock">09:00</span></div>
+      <div class="stat"><span>Salão</span><span class="v" id="menu-open">🟢 Aberto</span></div>
+      <div class="stat"><span>Dinheiro</span><span class="v" id="menu-money">R$ 500,00</span></div>
+      <div class="stat"><span>Reputação</span><span class="v" id="menu-rep">50</span></div>
+      <div class="stat"><span>Atendidos hoje</span><span class="v" id="menu-served">0</span></div>
+      <div class="stat"><span>Meta do dia</span><span class="v warn" id="menu-goal">R$ 800,00</span></div>
+      <div class="stat"><span>Zona atual</span><span class="v" id="menu-zone">salon</span></div>
+      <div class="stat"><span>Manutenções</span><span class="v" id="menu-maint">0</span></div>
+      <div class="stat"><span>Tendência</span><span class="v" id="menu-event">✨ Normal</span></div>
+    </div>
+    <div class="row">
+      <button class="sec" id="menu-resume">▶ Continuar</button>
+      <button class="sec" id="menu-stats">📊 Estatísticas</button>
+    </div>
+    <div class="row">
+      <button class="sec" id="menu-end">⏹ Encerrar</button>
+      <button class="sec" id="menu-restart">🔄 Reiniciar dia</button>
+    </div>
+  </div>
+
+  <div class="modal" id="admin-modal">
+    <h2 style="color:#22d3ee">💻 Terminal de Administração</h2>
+    <div class="terminal">
+      <div class="term-header"><span><span class="led"></span>GESTÃO DO SALÃO v5.4</span><span id="term-time">09:00</span></div>
+      <div class="term-row"><span>Dia</span><span class="val" id="term-day">1</span></div>
+      <div class="term-row"><span>Caixa</span><span class="val good" id="term-money">R$ 500,00</span></div>
+      <div class="term-row"><span>Meta</span><span class="val warn" id="term-goal">R$ 800,00</span></div>
+      <div class="term-row"><span>Reputação</span><span class="val" id="term-rep">50/100</span></div>
+      <div class="term-row"><span>Profissionais</span><span class="val" id="term-staff">0</span></div>
+      <div class="term-row"><span>Manutenções</span><span class="val warn" id="term-maint">0</span></div>
+      <div class="term-row"><span>Cadeiras/Macas</span><span class="val" id="term-assets">4 Ativas</span></div>
+      <div class="term-row"><span>Produtos</span><span class="val" id="term-stock">64 un</span></div>
+      <div class="term-section">▸ Ações rápidas</div>
+      <div class="term-btns">
+        <button class="term-btn" data-admin="shop-chairs"><span class="ico">💺</span>Cadeiras/Macas</button>
+        <button class="term-btn" data-admin="shop-stock"><span class="ico">📦</span>Produtos</button>
+        <button class="term-btn" data-admin="office"><span class="ico">💼</span>Equipe</button>
+        <button class="term-btn" data-admin="upgrades"><span class="ico">✨</span>Upgrades</button>
+        <button class="term-btn" data-admin="stats"><span class="ico">📊</span>Estatísticas</button>
+        <button class="term-btn" data-admin="ach"><span class="ico">🏆</span>Conquistas</button>
+      </div>
+      <button class="exit-btn" id="admin-exit">🚪 SAIR (ESC)</button>
+    </div>
+  </div>
+
+  <div class="modal" id="shop-modal">
+    <h2>🛒 Loja & Estações</h2>
+    <div class="tabs">
+      <div class="tab active" data-tab="chairs">Cadeiras & Macas</div>
+      <div class="tab" data-tab="stock">Cosméticos</div>
+      <div class="tab" data-tab="upgrade">Upgrades</div>
+    </div>
+    <div class="content">
+      <div id="shop-tab-chairs"></div>
+      <div id="shop-tab-stock" style="display:none"></div>
+      <div id="shop-tab-upgrade" style="display:none"></div>
+    </div>
+    <button class="sec" id="shop-close" style="margin-top:16px;">Fechar</button>
+  </div>
+
+  <div class="modal" id="office-modal">
+    <h2>💼 Recepção — Equipe</h2>
+    <div class="content" id="office-content"></div>
+    <button class="sec" id="office-close" style="margin-top:16px;">Fechar</button>
+  </div>
+
+  <div class="modal" id="rooms-modal">
+    <h2>🏠 Expansão — Salas para Alugar</h2>
+    <div class="content">
+      <div class="stat"><span>Aluguel</span><span class="v">Semanal · a cada 7 dias de jogo</span></div>
+      <div id="rooms-content"></div>
+      <p style="font-size:.68rem;color:#f9a8d4;line-height:1.5;margin-top:10px">A taxa de entrada é paga uma vez. O aluguel semanal só é cobrado enquanto a sala estiver ativa. Se o caixa não cobrir a cobrança, a sala fecha e fica com débito até regularizar.</p>
+    </div>
+    <button class="sec" id="rooms-close" style="margin-top:16px;">Fechar</button>
+  </div>
+
+  <div class="modal" id="ach-modal">
+    <h2>🏆 Conquistas</h2>
+    <div class="content" id="ach-list"></div>
+    <button class="sec" id="ach-close" style="margin-top:16px;">Fechar</button>
+  </div>
+
+  <div class="modal" id="stats-modal">
+    <h2>📊 Estatísticas</h2>
+    <div class="content" id="stats-content"></div>
+    <button class="sec" id="stats-close" style="margin-top:16px;">Fechar</button>
+  </div>
+
+  <div class="modal" id="end-day">
+    <h2>🌙 Fim do Expediente</h2>
+    <div class="content">
+      <div class="stat"><span>Clientes</span><span class="v" id="end-served">0</span></div>
+      <div class="stat"><span>Ganhos</span><span class="v" id="end-earned">R$ 0,00</span></div>
+      <div class="stat"><span>Custos</span><span class="v neg" id="end-costs">R$ 0,00</span></div>
+      <div class="stat"><span>Perdas</span><span class="v neg" id="end-lost">R$ 0,00</span></div>
+      <div class="stat"><span>Lucro</span><span class="v" id="end-profit">R$ 0,00</span></div>
+      <div class="stat"><span>Meta</span><span class="v" id="end-goal-status">✅</span></div>
+      <div id="end-bonus" style="color:#4ade80;font-size:.85rem;margin-top:10px;display:none"></div>
+      <div id="end-rent" style="color:#fbbf24;font-size:.78rem;line-height:1.4;margin-top:8px;display:none"></div>
+    </div>
+    <button id="next-day-btn" style="margin-top:18px;">▶ PRÓXIMO DIA</button>
+  </div>
+
+  <div class="modal" id="game-over">
+    <h2 style="color:#f87171">💔 Falência do Salão!</h2>
+    <div class="content">
+      <div class="stat"><span>Dias</span><span class="v" id="go-days">1</span></div>
+      <div class="stat"><span>Clientes totais</span><span class="v" id="go-served">0</span></div>
+      <div class="stat"><span>Dinheiro final</span><span class="v" id="go-money">R$ 0,00</span></div>
+    </div>
+    <button id="restart-all-btn" style="margin-top:18px;">🔄 RECOMEÇAR</button>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   MAP_CONFIG — Salão de Beleza & Estética
+   ============================================================ */
+const MAP_CONFIG = {
+  bounds: { minX: -20, maxX: 20, minZ: -22, maxZ: 20 },
+  building: {
+    minX: -10, maxX: 10,
+    minZ: -20, maxZ: 10,
+    height: 7,
+    frontDoor: { x1: -2, x2: 2 },
+    dividerZ: -10,
+    backDoorLeftX: -7,
+    backDoorRightX: 7,
+    doorWidth: 1.8,
+    officeWallX: 0
+  },
+  forecourt: {
+    stationPositions: [
+      { x: -5, z: 2, type: 'chair', name: 'Cadeira 1 (Cabelo)', unlocked: true },
+      { x: -1.5, z: 2, type: 'chair', name: 'Cadeira 2 (Cabelo)', unlocked: true },
+      { x: 1.5, z: 2, type: 'maca', name: 'Maca 1 (Depilação/Estética)', unlocked: true },
+      { x: 5, z: 2, type: 'maca', name: 'Maca 2 (Estética Avançada)', unlocked: false, price: 600 },
+      { x: -5, z: 6, type: 'chair', name: 'Cadeira 3 (Make/Penteado)', unlocked: false, price: 500 },
+      { x: 5, z: 6, type: 'maca', name: 'Maca 3 (Massagem/Spa)', unlocked: false, price: 800 }
+    ],
+    reception: { x: 0, z: -4 }
+  },
+  zones: {
+    street:    { id:'zone_street',    minX:-20, maxX:20,  minZ:10,  maxZ:20 },
+    salon:     { id:'zone_salon',     minX:-10, maxX:10,  minZ:-4,  maxZ:10 },
+    reception: { id:'zone_reception', minX:-10, maxX:10,  minZ:-10, maxZ:-4 },
+    storage:   { id:'zone_storage',   minX:-10, maxX:0,   minZ:-20, maxZ:-10 },
+    office:    { id:'zone_office',    minX:0,   maxX:10,  minZ:-20, maxZ:-10 }
+  },
+  poi: {
+    playerSpawn:   { x: 0,  z: 8   },
+    receptionDesk: { x: 0,  z: -4  },
+    officeDesk:    { x: 5,  z: -17 },
+    deliveryPickup:{ x: 7,  z: -2  },
+    pallet:        { x: -7, z: -16 }
+  },
+  routes: {
+    entryNorth: { x: 0,   z: 18 },
+    entryAlign: { x: 0,   z: 9  },
+    exitLane:   { x: 0,   z: 14 },
+    stationApproach: { z: 4 },
+    stationStop:     { z: 2 },
+    exitSouth:    { x: 0,  z: 16 }
+  },
+  dirtZones: [
+    [-6,0],[0,0],[5,0],[-4,4],[4,4],[-7,-6],[6,-6]
+  ]
+};
+
+/* ============ UTIL ============ */
+const SAVE_KEY='salao_save_v5_4';
+const fmt=v=>'R$ '+v.toFixed(2).replace('.',',');
+const fmtTime=t=>{t=Math.max(0,Math.ceil(t));return Math.floor(t/60)+':'+String(t%60).padStart(2,'0');};
+const fmtClock=h=>{h=((h%24)+24)%24;const hh=Math.floor(h);const mm=Math.floor((h-hh)*60);return String(hh).padStart(2,'0')+':'+String(mm).padStart(2,'0');};
+const rand=(a,b)=>a+Math.random()*(b-a);
+const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+
+function pointInZone(zone, x, z){
+  return x>zone.minX && x<zone.maxX && z>zone.minZ && z<zone.maxZ;
+}
+function zoneAt(x,z){
+  for(const k of ['street','salon','reception','storage','office']){
+    if(pointInZone(MAP_CONFIG.zones[k], x, z)) return k;
+  }
+  return 'outside';
+}
+
+/* ============ ÁUDIO ============ */
+const SoundSystem = {
+  ctx:null, masterGain:null, musicGain:null, sfxGain:null,
+  musicPlaying:false, currentTrack:0, musicTimerId:null, musicLoops:0,
+  musicVolume:0.055, sfxVolume:0.14, initialized:false,
+  init() {
+    if (this.initialized) return;
+    this.initialized = true;
+    try {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+      this.masterGain = this.ctx.createGain(); this.masterGain.gain.value = 1; this.masterGain.connect(this.ctx.destination);
+      this.musicGain = this.ctx.createGain(); this.musicGain.gain.value = this.musicVolume; this.musicGain.connect(this.masterGain);
+      this.sfxGain = this.ctx.createGain(); this.sfxGain.gain.value = this.sfxVolume; this.sfxGain.connect(this.masterGain);
+    } catch(e) {}
+  },
+  resume(){ if(this.ctx && this.ctx.state==='suspended') this.ctx.resume(); },
+  beep({freq=440,dur=0.1,type='sine',vol=1,delay=0,target='sfx',slideTo=null}) {
+    if(!this.ctx) return;
+    const t=this.ctx.currentTime+delay;
+    const osc=this.ctx.createOscillator(); const g=this.ctx.createGain();
+    osc.type=type; osc.frequency.setValueAtTime(freq,t);
+    if(slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol,t+0.008);
+    g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+    osc.connect(g); g.connect(target==='music'?this.musicGain:this.sfxGain);
+    osc.start(t); osc.stop(t+dur+0.02);
+  },
+  sfx(name) {
+    this.init(); this.resume();
+    switch(name){
+      case 'click': this.beep({freq:900,dur:0.04,vol:0.35}); break;
+      case 'coin': this.beep({freq:980,dur:0.07,vol:0.45}); this.beep({freq:1470,dur:0.12,vol:0.45,delay:0.06}); break;
+      case 'cash': this.beep({freq:1760,dur:0.08,type:'triangle',vol:0.6}); this.beep({freq:2349,dur:0.25,type:'triangle',vol:0.5,delay:0.06}); break;
+      case 'notif': this.beep({freq:880,dur:0.12,type:'sine',vol:0.5}); this.beep({freq:1320,dur:0.25,type:'sine',vol:0.5,delay:0.1}); break;
+      case 'error': this.beep({freq:280,dur:0.22,type:'sawtooth',vol:0.5,slideTo:100}); break;
+      case 'wrong': this.beep({freq:220,dur:0.18,type:'sawtooth',vol:0.55,slideTo:120}); break;
+      case 'success': [523,659,784,1047].forEach((f,i)=>this.beep({freq:f,dur:0.14,vol:0.4,delay:i*0.06})); break;
+      case 'achievement': [659,784,1047,1319,1568].forEach((f,i)=>this.beep({freq:f,dur:0.28,type:'triangle',vol:0.55,delay:i*0.09})); break;
+      case 'door': this.beep({freq:300,dur:0.15,type:'sine',vol:0.3,slideTo:150}); break;
+      case 'clean': for(let i=0;i<5;i++) this.beep({freq:500+i*100,dur:0.07,type:'sine',vol:0.25,delay:i*0.08}); break;
+      case 'wrench': this.beep({freq:450,dur:0.05,vol:0.5}); this.beep({freq:950,dur:0.05,vol:0.5,delay:0.06}); break;
+    }
+  },
+  tracks: [
+    { name:'Bossa Lounge', bpm:96, bass:[0,0,2,2,4,4,2,2], melody:[7,5,7,9,11,9,7,5,4,5,7,9,7,5,4,2],
+      scale:[220,246.94,277.18,293.66,329.63,369.99,415.3,440,493.88,554.37] },
+    { name:'Spa Relax', bpm:82, bass:[0,0,4,4,2,2,5,5], melody:[4,7,9,7,4,2,4,7,9,11,9,7,4,2,4,0],
+      scale:[196,220,246.94,261.63,293.66,329.63,349.23,392,440] }
+  ],
+  nextMusicBar(){
+    if(!this.musicPlaying || !this.ctx) return;
+    const track=this.tracks[this.currentTrack];
+    const beat=60/track.bpm/2;
+    const barDur=beat*8;
+    for(let i=0;i<8;i++){
+      const n=track.bass[i]??0; const f=track.scale[n%track.scale.length];
+      this.beep({freq:f,dur:beat*0.85,type:'triangle',vol:0.4,delay:i*beat,target:'music'});
+    }
+    for(let i=0;i<16;i++){
+      const n=track.melody[i]??0; const f=track.scale[n%track.scale.length]*1.5;
+      this.beep({freq:f,dur:beat*0.55,vol:0.12,delay:i*beat/2,target:'music'});
+    }
+    this.musicTimerId=setTimeout(()=>this.nextMusicBar(), barDur*1000-60);
+    this.musicLoops++;
+    if(this.musicLoops>=4){ this.musicLoops=0; this.currentTrack=(this.currentTrack+1)%this.tracks.length; showTrackName(); }
+  },
+  startMusic(idx){
+    this.init(); this.resume();
+    if(idx!==undefined) this.currentTrack=idx%this.tracks.length;
+    if(this.musicPlaying) return;
+    this.musicPlaying=true; this.musicLoops=0; this.nextMusicBar();
+  },
+  stopMusic(){ this.musicPlaying=false; if(this.musicTimerId) clearTimeout(this.musicTimerId); this.musicTimerId=null; },
+  toggleMusic(){ if(this.musicPlaying){ this.stopMusic(); return false; } else { this.startMusic(); return true; } }
+};
+function showTrackName(){
+  const el=document.getElementById('track-name');
+  document.getElementById('track-name-text').textContent=SoundSystem.tracks[SoundSystem.currentTrack].name;
+  el.classList.add('show');
+  clearTimeout(showTrackName._t);
+  showTrackName._t=setTimeout(()=>el.classList.remove('show'),2500);
+}
+
+/* ============ STATE ============ */
+function defaultState(){
+  return {
+    phase:'menu',day:1,money:650,reputation:55,
+    served:0,totalServed:0,earned:0,costs:0,lost:0,spent:0,
+    goal:750,lostClients:0,totalLost:0,bonusPaid:false,goalHit:false,
+    tutorialDone:false,eventId:'normal',difficulty:1,
+    timeLeft:180,shiftLength:180,inShift:false,shiftDone:false,snap:null,
+    worldTime:9, worldLength:13, isOpen:true,
+    totalDeliveries:0,totalStoreServed:0,
+    fpMode:false, maintenanceFixed:0,totalMaintenanceSpawned:0,
+    supplies:{cleaning:6,cosmetics:5,towels:4}, musicOn:true, debugOn:false,
+    schemaVersion:5.4
+  };
+}
+
+const SERVICES = {
+  corte:{icon:'💇‍♀️',name:'Corte & Escova',price:65,duration:15},
+  coloracao:{icon:'🎨',name:'Coloração & Mechas',price:150,duration:25},
+  depilacao:{icon:'🪒',name:'Depilação (Maca)',price:90,duration:20},
+  massagem:{icon:'💆‍♀️',name:'Massagem Relaxante (Spa)',price:130,duration:25},
+  manicure:{icon:'💅',name:'Manicure & Pedicure',price:50,duration:15},
+  limpezaPele:{icon:'✨',name:'Limpeza de Pele',price:110,duration:20},
+  cilios:{icon:'👁️',name:'Cílios & Sobrancelhas',price:85,duration:12,room:'cilios'},
+  spaPremium:{icon:'🧖‍♀️',name:'Ritual Spa Premium',price:180,duration:35,room:'spa'},
+  facialPremium:{icon:'🌿',name:'Tratamento Facial Premium',price:195,duration:30,room:'facial'},
+  noivasVIP:{icon:'💍',name:'Pacote VIP de Noiva',price:160,duration:40,room:'vip',appointmentOnly:true}
+};
+const ROOM_CONFIG = {
+  cilios:{icon:'👁️',name:'Cílios & Sobrancelhas',desc:'Procedimentos rápidos e de alta rotatividade.',entry:300,rent:45,services:['cilios']},
+  spa:{icon:'🧖‍♀️',name:'Massagem & Spa',desc:'Atendimento relaxante premium e demorado.',entry:500,rent:80,services:['spaPremium']},
+  facial:{icon:'✨',name:'Estética Facial & Corporal',desc:'Limpeza premium e tratamentos de maior valor.',entry:900,rent:130,services:['facialPremium']},
+  vip:{icon:'💍',name:'Sala VIP & Noivas',desc:'Atendimentos exclusivos por agendamento; exige reputação 70.',entry:1500,rent:200,repRequired:70,services:['noivasVIP']}
+};
+const SERVICE_IDS = Object.keys(SERVICES);
+
+const COSMETICS = {
+  shampoo:{icon:'🧴',name:'Shampoo Profissional',price:45,cost:18,color:0xf472b6},
+  tintura:{icon:'🎨',name:'Kit Coloração',price:60,cost:24,color:0xdb2777},
+  cera:{icon:'🍯',name:'Cera Depilatória',price:40,cost:15,color:0xfbbf24},
+  oleoSpa:{icon:'🌸',name:'Óleo Essencial Spa',price:70,cost:28,color:0xa78bfa},
+  esmalte:{icon:'💅',name:'Kit Esmaltes',price:35,cost:12,color:0xec4899},
+  cremePele:{icon:'🌿',name:'Creme Facial',price:55,cost:20,color:0x4ade80}
+};
+const COSMETIC_IDS = Object.keys(COSMETICS);
+
+const SUPPLIES_LIST = [
+  {id:'cleaning',ico:'🧴',name:'Produto de Limpeza',cost:15,desc:'Para limpar o salão'},
+  {id:'cosmetics',ico:'💄',name:'Insumos Estéticos',cost:30,desc:'Essencial para procedimentos'},
+  {id:'towels',ico:'🧺',name:'Kit Toalhas Limpas',cost:20,desc:'Para macas e cadeiras'}
+];
+
+/* ============ ORDERS ============ */
+function getAvailableServiceIds(isAppointment){
+  return SERVICE_IDS.filter(id=>{
+    const srv=SERVICES[id];
+    if(srv.room && !Game.rooms[idRoomForService(id)]?.active) return false;
+    if(srv.appointmentOnly && !isAppointment) return false;
+    return true;
+  });
+}
+function idRoomForService(id){ return SERVICES[id]?.room || ''; }
+
+function buildSalonOrder(isAppointment){
+  const ids=getAvailableServiceIds(isAppointment);
+  const id=pick(ids.length?ids:Object.keys(SERVICES).filter(k=>!SERVICES[k].room)); const srv=SERVICES[id];
+  const isMaca = id==='depilacao'||id==='massagem'||id==='limpezaPele'||id==='spaPremium'||id==='facialPremium'||id==='noivasVIP';
+  const steps = isMaca ? ['higienizar','aplicar','finalizar','cobrar'] : ['lavar','cortar','secar','cobrar'];
+  const icons = isMaca ? ['🧴','✨','🧖‍♀️','💳'] : ['🚿','✂️','💨','💳'];
+  const labels = isMaca ? ['Higienizar','Aplicar','Finalizar','Cobrar'] : ['Lavar','Cortar','Secar','Cobrar'];
+  return {
+    kind:'salon', id, isMaca, name:srv.name, price:srv.price,
+    steps, icons, labels, isAppointment:!!isAppointment
+  };
+}
+
+/* ============ GAME ============ */
+const Game = {
+  state: defaultState(),
+  stock:{shampoo:10,tintura:10,cera:10,oleoSpa:10,esmalte:10,cremePele:10},
+  upgrades:{cadeira:0,produtos:0,atendimento:0,marketing:0,caixa:0,decoracao:0},
+  staff:{cabeleireiro:0,esteticista:0,gerente:0,recepcionista:0,auxiliar:0},
+  contracts:{cabeleireiro:0,esteticista:0,gerente:0,recepcionista:0,auxiliar:0},
+  rooms:Object.fromEntries(Object.keys(ROOM_CONFIG).map(id=>[id,{owned:false,active:false,nextRentDay:8,arrears:0}])),
+  stats:{autoServed:0,totalEarned:0,totalSpent:0,daysPlayed:0,perfectDays:0,bestDay:0,clientsServed:0,appointments:0,walkins:0,trucksArrived:0,maintenanceFixed:0},
+  achievements:{
+    first_client:{name:'Primeira Cliente',desc:'Atenda a primeira cliente',icon:'✨',unlocked:false},
+    first_appt:{name:'Notificação VIP',desc:'Atenda via agendamento',icon:'🔔',unlocked:false},
+    day_3:{name:'Salão Ficado',desc:'Chegue ao dia 3',icon:'📅',unlocked:false},
+    day_7:{name:'Semana de Sucesso',desc:'Chegue ao dia 7',icon:'🥇',unlocked:false},
+    money_2000:{name:'Faturamento',desc:'Acumule R$ 2.000',icon:'💰',unlocked:false},
+    money_5000:{name:'Império da Beleza',desc:'Acumule R$ 5.000',icon:'💎',unlocked:false},
+    rep_100:{name:'Referência',desc:'100 de reputação',icon:'⭐',unlocked:false},
+    perfect_day:{name:'Dia Perfeito',desc:'Sem perder clientes',icon:'✨',unlocked:false},
+    upgrade_max:{name:'Luxo Total',desc:'Maximize um upgrade',icon:'👑',unlocked:false},
+    staff_full:{name:'Equipe Completa',desc:'Todos os cargos ativos',icon:'👥',unlocked:false},
+    clients_50:{name:'Salão Movimentado',desc:'50 clientes atendidas',icon:'🎯',unlocked:false},
+    maca_unlocked:{name:'Espaço Estético',desc:'Desbloqueie uma nova maca',icon:'🛏️',unlocked:false},
+    cleaner:{name:'Zeladora',desc:'Primeira limpeza',icon:'🧹',unlocked:false},
+    chief:{name:'Gerente Geral',desc:'Use o terminal',icon:'💻',unlocked:false},
+    maint_10:{name:'Ambiente Impecável',desc:'10 limpezas realizadas',icon:'📋',unlocked:false},
+    debugger:{name:'Curiosa',desc:'Ativou o modo debug',icon:'🐞',unlocked:false}
+  },
+  uiOpen:false,
+  getEvent(){ return Events.byId(this.state.eventId); },
+  save(){
+    try{
+      const {snap, ...stateToSave}=this.state;
+      localStorage.setItem(SAVE_KEY,JSON.stringify({
+        state:stateToSave,
+        stock:this.stock,upgrades:this.upgrades,
+        staff:this.staff,contracts:this.contracts,rooms:this.rooms,stats:this.stats,achievements:this.achievements,
+        stations:MAP_CONFIG.forecourt.stationPositions.map(s=>s.unlocked)
+      }));
+    }catch(e){}
+  },
+  load(){
+    try{
+      const raw=localStorage.getItem(SAVE_KEY)||localStorage.getItem('salao_save_v5_3')||localStorage.getItem('salao_save_v5_2');
+      if(!raw) return false;
+      const d=JSON.parse(raw);
+      if(d.state) Object.assign(this.state,d.state);
+      if(d.stock) Object.assign(this.stock,d.stock);
+      if(d.upgrades) Object.assign(this.upgrades,d.upgrades);
+      if(d.staff) Object.assign(this.staff,d.staff);
+      if(d.contracts) Object.assign(this.contracts,d.contracts);
+      if(d.rooms) for(const id of Object.keys(ROOM_CONFIG)) if(d.rooms[id]) Object.assign(this.rooms[id],d.rooms[id]);
+      if(d.stats) Object.assign(this.stats,d.stats);
+      if(d.achievements) Object.assign(this.achievements,d.achievements);
+      if(d.stations && Array.isArray(d.stations)){
+        d.stations.forEach((unlocked,i)=>{
+          if(MAP_CONFIG.forecourt.stationPositions[i]) MAP_CONFIG.forecourt.stationPositions[i].unlocked = unlocked;
+        });
+      }
+      this.state.phase='menu'; this.state.fpMode=false; this.state.snap=null;
+      return true;
+    }catch(e){return false;}
+  },
+  reset(){
+    try{localStorage.removeItem(SAVE_KEY); localStorage.removeItem('salao_save_v5_3'); localStorage.removeItem('salao_save_v5_2');}catch(e){}
+    this.state=defaultState();
+    this.stock={shampoo:10,tintura:10,cera:10,oleoSpa:10,esmalte:10,cremePele:10};
+    this.upgrades={cadeira:0,produtos:0,atendimento:0,marketing:0,caixa:0,decoracao:0};
+    this.staff={cabeleireiro:0,esteticista:0,gerente:0,recepcionista:0,auxiliar:0};
+    this.contracts={cabeleireiro:0,esteticista:0,gerente:0,recepcionista:0,auxiliar:0};
+    this.rooms=Object.fromEntries(Object.keys(ROOM_CONFIG).map(id=>[id,{owned:false,active:false,nextRentDay:8,arrears:0}]));
+    this.stats={autoServed:0,totalEarned:0,totalSpent:0,daysPlayed:0,perfectDays:0,bestDay:0,clientsServed:0,appointments:0,walkins:0,trucksArrived:0,maintenanceFixed:0};
+    MAP_CONFIG.forecourt.stationPositions.forEach((s,i)=>{ s.unlocked = i < 3; });
+    Object.keys(this.achievements).forEach(k=>this.achievements[k].unlocked=false);
+  },
+  startShift(){
+    const s=this.state;
+    s.phase='playing'; s.earned=0;s.costs=0;s.lost=0;s.spent=0;
+    s.lostClients=0;s.served=0;s.bonusPaid=false;s.goalHit=false;
+    s.difficulty=1+(s.day-1)*0.08;
+    s.goal=Math.round(650+(s.day-1)*300+Math.pow(s.day,1.3)*40);
+    s.shiftLength=180+Math.min(s.day-1,6)*10; s.timeLeft=s.shiftLength;
+    s.worldTime=9; s.worldLength=12;
+    s.eventId=Events.rollForDay(s.day).id;
+    s.inShift=true; s.shiftDone=false; s.isOpen=true;
+    s.fpMode=false;
+    s.snap={money:s.money,reputation:s.reputation,stock:Object.assign({},this.stock),upgrades:Object.assign({},this.upgrades),staff:Object.assign({},this.staff),contracts:Object.assign({},this.contracts),rooms:JSON.parse(JSON.stringify(this.rooms)),supplies:Object.assign({},s.supplies)};
+    this.stats.daysPlayed++;
+    beginShiftUI(); this.save();
+  },
+  resumeShift(){ this.state.phase='playing'; beginShiftUI(); },
+  restartDay(){
+    const s=this.state; if(!s.inShift||!s.snap) return;
+    cancelService(); clearClients(); clearDeliveries(); clearMaintenance();
+    this.stats.totalEarned-=s.earned; this.stats.totalSpent-=s.spent;
+    s.totalServed-=s.served; s.totalLost-=s.lostClients;
+    s.money=s.snap.money; s.reputation=s.snap.reputation;
+    Object.assign(this.stock,s.snap.stock);
+    Object.assign(this.upgrades,s.snap.upgrades); Object.assign(this.staff,s.snap.staff);
+    Object.assign(this.contracts,s.snap.contracts);
+    if(s.snap.rooms) this.rooms=JSON.parse(JSON.stringify(s.snap.rooms));
+    if(s.snap.supplies) Object.assign(s.supplies,s.snap.supplies);
+    s.earned=0;s.costs=0;s.lost=0;s.spent=0;
+    s.lostClients=0;s.served=0;s.bonusPaid=false;s.goalHit=false;
+    s.timeLeft=s.shiftLength; s.phase='playing'; s.isOpen=true;
+    s.worldTime=9; s.fpMode=false;
+    beginShiftUI(); this.save();
+  },
+  processRoomRent(){
+    const s=this.state, charged=[];
+    for(const id of Object.keys(ROOM_CONFIG)){
+      const room=this.rooms[id], cfg=ROOM_CONFIG[id];
+      if(!room.owned||!room.active||s.day<room.nextRentDay) continue;
+      if(s.money>=cfg.rent){
+        s.money-=cfg.rent; s.spent+=cfg.rent; s.costs+=cfg.rent; this.stats.totalSpent+=cfg.rent;
+        room.arrears=0; room.nextRentDay=s.day+7; charged.push(cfg.name+': '+fmt(cfg.rent));
+      }else{
+        room.arrears+=cfg.rent; room.active=false; room.nextRentDay=s.day+7;
+        charged.push(cfg.name+': fechada por falta de caixa ('+fmt(room.arrears)+' em aberto)');
+      }
+    }
+    return charged;
+  },
+  endShift(){
+    const s=this.state; if((s.phase!=='playing'&&s.phase!=='servicing')||s.shiftDone) return;
+    cancelService(); exitFPMode();
+    const rentResults=this.processRoomRent();
+    s.phase='endday'; s.inShift=false; s.shiftDone=true;
+    if(s.lostClients===0&&s.served>0){ this.stats.perfectDays++; this.unlockAchievement('perfect_day'); }
+    if(s.served>this.stats.bestDay) this.stats.bestDay=s.served;
+    const profit=s.earned-s.costs-s.lost;
+    const rentEl=document.getElementById('end-rent');
+    rentEl.style.display=rentResults.length?'block':'none';
+    rentEl.innerHTML=rentResults.length?'🏠 Aluguel semanal:<br>'+rentResults.map(x=>'• '+x).join('<br>'):'';
+    const bEl=document.getElementById('end-bonus');
+    if(s.earned>=s.goal&&!s.bonusPaid){ const b=Math.round(s.goal*0.2); s.money+=b; s.bonusPaid=true; bEl.style.display='block'; bEl.textContent='🎉 Meta! +R$ '+b; }
+    else bEl.style.display='none';
+    document.getElementById('end-served').textContent=s.served;
+    document.getElementById('end-earned').textContent=fmt(s.earned);
+    document.getElementById('end-costs').textContent=fmt(s.costs);
+    document.getElementById('end-lost').textContent=fmt(s.lost);
+    const pEl=document.getElementById('end-profit'); pEl.textContent=fmt(profit); pEl.className='v'+(profit<0?' neg':'');
+    document.getElementById('end-goal-status').textContent=s.earned>=s.goal?'✅ Batida':'❌ Não batida';
+    if(s.day>=3) this.unlockAchievement('day_3');
+    if(s.day>=7) this.unlockAchievement('day_7');
+    if(s.money>=2000) this.unlockAchievement('money_2000');
+    if(s.money>=5000) this.unlockAchievement('money_5000');
+    if(s.reputation>=100) this.unlockAchievement('rep_100');
+    updateHUD(); openModal('end-day'); this.save();
+  },
+  nextDay(){
+    const today=this.state.day;
+    Object.keys(this.contracts).forEach(k=>{ if(this.contracts[k]>0 && this.contracts[k]<=today){ this.staff[k]=Math.max(0,this.staff[k]-1); this.contracts[k]=0; } });
+    let total=0; for(const k in this.stock) total+=this.stock[k];
+    if(this.state.money<15 && total<2){
+      this.state.phase='gameover'; closeModal('end-day');
+      document.getElementById('go-days').textContent=this.state.day;
+      document.getElementById('go-served').textContent=this.state.totalServed;
+      document.getElementById('go-money').textContent=fmt(this.state.money);
+      openModal('game-over'); return;
+    }
+    this.state.day++; closeModal('end-day'); clearClients(); clearDeliveries(); clearMaintenance(); this.startShift();
+    ensureStaffNPCs();
+  },
+  restartAll(){
+    this.reset(); clearClients(); clearDeliveries(); clearMaintenance(); closeModal('game-over');
+    const w=document.getElementById('welcome'); w.style.display='flex'; w.style.opacity='1';
+    refreshWelcome(); updateHUD(); updateStockBadge(); updateWeatherBadge(); applyEnv(); rebuildStations();
+  },
+  addMoney(v){
+    const s=this.state;
+    const g=this.staff.gerente>0?1.1:1; v=Math.round(v*g*100)/100;
+    s.money+=v; s.earned+=v; this.stats.totalEarned+=v;
+    if(!s.goalHit&&s.earned>=s.goal){ s.goalHit=true; showBanner('<div class="t">🎯 Meta batida!</div>'); }
+    updateHUD(); return v;
+  },
+  loseMoney(v){ this.state.money=Math.max(0,this.state.money-v); this.state.lost+=v; updateHUD(); },
+  spendMoney(v,invest){ const s=this.state; s.money=Math.max(0,s.money-v); s.spent+=v; this.stats.totalSpent+=v; if(!invest) s.costs+=v; updateHUD(); },
+  addReputation(v){ this.state.reputation=clamp(this.state.reputation+v,0,100); updateHUD(); },
+  unlockAchievement(id){
+    const a=this.achievements[id]; if(!a||a.unlocked) return;
+    a.unlocked=true; SoundSystem.sfx('achievement'); showAchievementToast(a); updateAchBadge(); this.save();
+  },
+  getStockCapacity(){ return 20+this.upgrades.produtos*15; },
+  hasCosmeticStock(items){ const n={}; items.forEach(i=>n[i]=(n[i]||0)+1); for(const k in n) if((this.stock[k]||0)<n[k]) return false; return true; }
+};
+
+/* ============ EVENTS ============ */
+const Events = {
+  list:[
+    {id:'normal',icon:'✨',name:'Dia Normal',desc:'Fluxo padrão no salão.',spawnMult:1.0,priceMult:1.0,patienceMult:1.0,weight:40,env:{bg:0x1a1016}},
+    {id:'wedding',icon:'💐',name:'Fim de Semana de Noivas',desc:'Muitos agendamentos VIP.',spawnMult:1.2,priceMult:1.35,patienceMult:1.1,weight:15,env:{bg:0x22101e}},
+    {id:'spa',icon:'🌸',name:'Dia de Spa',desc:'Alta procura por macas e massagens.',spawnMult:0.85,priceMult:1.2,patienceMult:0.9,weight:15,env:{bg:0x1b1422}},
+    {id:'promo',icon:'📢',name:'Promoção de Instagram',desc:'Clientes chegando em dobro.',spawnMult:0.65,priceMult:1.05,patienceMult:1.0,weight:10,env:{bg:0x101a14}},
+    {id:'vip',icon:'👑',name:'Visita de Influenciadora',desc:'Reputação em dobro ao atender!',spawnMult:0.9,priceMult:1.5,patienceMult:0.8,weight:8,env:{bg:0x201020}}
+  ],
+  byId(id){ return this.list.find(e=>e.id===id) || this.list[0]; },
+  rollForDay(day){
+    if(day<=1) return this.list[0];
+    const t=this.list.reduce((s,e)=>s+e.weight,0);
+    let r=Math.random()*t;
+    for(const e of this.list){ r-=e.weight; if(r<=0) return e; }
+    return this.list[0];
+  }
+};
+
+/* ============ COLLISION ============ */
+const Collision = {
+  circles:[], boxes:[],
+  addCircle(x,z,r,owner){ const c={x,z,r,owner,active:true}; this.circles.push(c); return c; },
+  addBox(minX,maxX,minZ,maxZ,owner){ const b={minX,maxX,minZ,maxZ,owner,active:true}; this.boxes.push(b); return b; },
+  resolvePlayer(px,pz,pr){
+    let nx=px, nz=pz;
+    for(const b of this.boxes){
+      if(b.active===false) continue;
+      const cx=Math.max(b.minX,Math.min(nx,b.maxX));
+      const cz=Math.max(b.minZ,Math.min(nz,b.maxZ));
+      const dx=nx-cx, dz=nz-cz, d2=dx*dx+dz*dz;
+      if(d2<pr*pr && d2>0.0001){ const d=Math.sqrt(d2); nx+=(dx/d)*(pr-d); nz+=(dz/d)*(pr-d); }
+    }
+    for(const c of this.circles){
+      if(c.active===false) continue;
+      const dx=nx-c.x, dz=nz-c.z, d2=dx*dx+dz*dz, minD=pr+c.r;
+      if(d2<minD*minD && d2>0.0001){ const d=Math.sqrt(d2); nx+=(dx/d)*(minD-d); nz+=(dz/d)*(minD-d); }
+    }
+    return {x:nx, z:nz};
+  }
+};
+
+/* ============ CENA ============ */
+const container=document.getElementById('game-container');
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x1a1016);
+scene.fog=new THREE.Fog(0x1a1016,35,85);
+
+const camera=new THREE.PerspectiveCamera(55,window.innerWidth/window.innerHeight,0.1,1000);
+const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setSize(window.innerWidth,window.innerHeight);
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+container.appendChild(renderer.domElement);
+
+const ambientLight=new THREE.AmbientLight(0xfff0f6,0.6); scene.add(ambientLight);
+const sunLight=new THREE.DirectionalLight(0xffd6e8,0.8);
+sunLight.position.set(15,25,10); sunLight.castShadow=true;
+sunLight.shadow.mapSize.width=1024; sunLight.shadow.mapSize.height=1024;
+sunLight.shadow.camera.left=-30; sunLight.shadow.camera.right=30;
+sunLight.shadow.camera.top=30; sunLight.shadow.camera.bottom=-30;
+scene.add(sunLight);
+
+const salonCeilLights=[];
+[[-5,-2],[0,-2],[5,-2],[-5,-7],[0,-7],[5,-7],[-5,-15],[5,-15]].forEach(([x,z])=>{
+  const l=new THREE.PointLight(0xffd6e8,0.8,12); l.position.set(x,6,z); scene.add(l);
+  salonCeilLights.push(l);
+});
+
+function applyEnv(){ const e=Events.byId(Game.state.eventId).env; scene.background.setHex(e.bg); scene.fog.color.setHex(e.bg); updateDayNightLighting(); }
+function updateDayNightLighting(){
+  const t=Game.state.worldTime;
+  let sunI=0; if(t>=7&&t<=21) sunI=Math.max(0,Math.sin((t-7)/14*Math.PI));
+  sunLight.intensity=sunI*1.0;
+  salonCeilLights.forEach(l=>{ l.intensity=t<7.5||t>19.5?1.2:0.7; });
+}
+
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(60,60),new THREE.MeshStandardMaterial({color:0x22131c,roughness:0.8}));
+floor.rotation.x=-Math.PI/2; floor.receiveShadow=true; scene.add(floor);
+const streetRoad=new THREE.Mesh(new THREE.PlaneGeometry(20,16),new THREE.MeshStandardMaterial({color:0x1e1e24,roughness:0.95}));
+streetRoad.rotation.x=-Math.PI/2; streetRoad.position.set(0,0.01,14); streetRoad.receiveShadow=true; scene.add(streetRoad);
+const sidewalk=new THREE.Mesh(new THREE.PlaneGeometry(22,3),new THREE.MeshStandardMaterial({color:0xd8b4fe,roughness:0.7}));
+sidewalk.rotation.x=-Math.PI/2; sidewalk.position.set(0,0.015,10); sidewalk.receiveShadow=true; scene.add(sidewalk);
+
+const matBlack=new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.5});
+const matPink=new THREE.MeshStandardMaterial({color:0xec4899,roughness:0.3});
+const matGold=new THREE.MeshStandardMaterial({color:0xd4af37,metalness:0.8,roughness:0.2});
+const matInox=new THREE.MeshStandardMaterial({color:0xe2e8f0,metalness:0.8,roughness:0.2});
+const matWood=new THREE.MeshStandardMaterial({color:0x5c4033,roughness:0.7});
+const matGlass=new THREE.MeshStandardMaterial({color:0xf472b6,transparent:true,opacity:0.25,roughness:0.1});
+const matWall=new THREE.MeshStandardMaterial({color:0xfbcfe8,roughness:0.7});
+const matWallIn=new THREE.MeshStandardMaterial({color:0xfdf2f8,roughness:0.75});
+const matShelf=new THREE.MeshStandardMaterial({color:0xf3e8ff,roughness:0.5});
+const matCeil=new THREE.MeshStandardMaterial({color:0x2d1b24,roughness:0.9});
+
+/* ====== ESTAÇÕES (Cadeiras & Macas) ====== */
+const stationMeshes=[];
+function rebuildStations(){
+  stationMeshes.forEach(m=>scene.remove(m));
+  stationMeshes.length=0;
+  MAP_CONFIG.forecourt.stationPositions.forEach((pos,i)=>{
+    const g=new THREE.Group();
+    const isMaca = pos.type==='maca';
+    const baseW = isMaca ? 1.4 : 1.1, baseD = isMaca ? 2.2 : 1.1;
+    
+    const floorMat = new THREE.MeshStandardMaterial({color: pos.unlocked ? 0x3d2331 : 0x2a1b22, roughness:0.6});
+    const base=new THREE.Mesh(new THREE.BoxGeometry(baseW,0.15,baseD),floorMat);
+    base.position.y=0.075; base.receiveShadow=true; g.add(base);
+
+    if(pos.unlocked){
+      if(isMaca){
+        const body=new THREE.Mesh(new THREE.BoxGeometry(1.2,0.6,2.0),new THREE.MeshStandardMaterial({color:0xfdf2f8,roughness:0.5}));
+        body.position.y=0.45; body.castShadow=true; g.add(body);
+        const pillow=new THREE.Mesh(new THREE.BoxGeometry(1.0,0.15,0.5),matPink);
+        pillow.position.set(0,0.82,-0.7); g.add(pillow);
+        const legs=[[-0.5,0.8],[0.5,0.8],[-0.5,-0.8],[0.5,-0.8]];
+        legs.forEach(([x,z])=>{
+          const leg=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.06,0.4),matGold);
+          leg.position.set(x,0.2,z); g.add(leg);
+        });
+      } else {
+        const seat=new THREE.Mesh(new THREE.CylinderGeometry(0.5,0.5,0.5,16),matPink);
+        seat.position.y=0.4; seat.castShadow=true; g.add(seat);
+        const back=new THREE.Mesh(new THREE.BoxGeometry(0.8,0.8,0.15),matPink);
+        back.position.set(0,0.9,-0.35); back.castShadow=true; g.add(back);
+        const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.08,0.12,0.4),matGold);
+        pole.position.y=0.2; g.add(pole);
+        const mirror=new THREE.Mesh(new THREE.BoxGeometry(1.2,1.8,0.08),matInox);
+        mirror.position.set(0,1.5,-0.9); g.add(mirror);
+      }
+    } else {
+      const lockBox=new THREE.Mesh(new THREE.BoxGeometry(1,0.8,1),new THREE.MeshStandardMaterial({color:0x4a3b44}));
+      lockBox.position.y=0.4; g.add(lockBox);
+    }
+    g.position.set(pos.x,0,pos.z); scene.add(g);
+    stationMeshes.push(g);
+  });
+}
+rebuildStations();
+
+/* ====== CONSTRUÇÃO DO SALÃO ====== */
+const B=MAP_CONFIG.building;
+const W=B.maxX-B.minX, D=B.maxZ-B.minZ, H=B.height;
+const salonGroup=new THREE.Group();
+const wallBack=new THREE.Mesh(new THREE.BoxGeometry(W,H,0.2),matWall);
+wallBack.position.set(0,H/2,B.minZ-0.1); wallBack.receiveShadow=true; salonGroup.add(wallBack);
+const wallL=new THREE.Mesh(new THREE.BoxGeometry(0.2,H,D),matWall);
+wallL.position.set(B.minX-0.1,H/2,(B.minZ+B.maxZ)/2); wallL.receiveShadow=true; salonGroup.add(wallL);
+const wallR=wallL.clone(); wallR.position.set(B.maxX+0.1,H/2,(B.minZ+B.maxZ)/2); salonGroup.add(wallR);
+const frontLeft=new THREE.Mesh(new THREE.BoxGeometry((B.frontDoor.x1-B.minX),H,0.2),matWall);
+frontLeft.position.set((B.minX+B.frontDoor.x1)/2,H/2,B.maxZ+0.1); frontLeft.receiveShadow=true; salonGroup.add(frontLeft);
+const frontRight=new THREE.Mesh(new THREE.BoxGeometry((B.maxX-B.frontDoor.x2),H,0.2),matWall);
+frontRight.position.set((B.maxX+B.frontDoor.x2)/2,H/2,B.maxZ+0.1); frontRight.receiveShadow=true; salonGroup.add(frontRight);
+const frontTop=new THREE.Mesh(new THREE.BoxGeometry(B.frontDoor.x2-B.frontDoor.x1,H-2.6,0.2),matWall);
+frontTop.position.set(0,H-(H-2.6)/2,B.maxZ+0.1); salonGroup.add(frontTop);
+const roof=new THREE.Mesh(new THREE.BoxGeometry(W+0.4,0.3,D+0.4),matCeil);
+roof.position.set(0,H,B.minZ+D/2); roof.castShadow=true; salonGroup.add(roof);
+const interiorFloor=new THREE.Mesh(new THREE.PlaneGeometry(W-0.2,D-0.2),new THREE.MeshStandardMaterial({color:0xfdf2f8,roughness:0.6}));
+interiorFloor.rotation.x=-Math.PI/2; interiorFloor.position.set(0,0.02,B.minZ+D/2); interiorFloor.receiveShadow=true; salonGroup.add(interiorFloor);
+
+const div1=new THREE.Mesh(new THREE.BoxGeometry(B.minX*-1+B.backDoorLeftX,H,0.15),matWallIn);
+div1.position.set((B.minX+B.backDoorLeftX)/2,H/2,B.dividerZ); div1.receiveShadow=true; salonGroup.add(div1);
+const div2=new THREE.Mesh(new THREE.BoxGeometry(B.backDoorRightX-B.backDoorLeftX-B.doorWidth*2,H,0.15),matWallIn);
+div2.position.set(0,H/2,B.dividerZ); div2.receiveShadow=true; salonGroup.add(div2);
+const div3=new THREE.Mesh(new THREE.BoxGeometry(B.maxX-B.backDoorRightX,H,0.15),matWallIn);
+div3.position.set((B.maxX+B.backDoorRightX)/2,H/2,B.dividerZ); div3.receiveShadow=true; salonGroup.add(div3);
+const doorTopL=new THREE.Mesh(new THREE.BoxGeometry(B.doorWidth,H-2.6,0.15),matWallIn);
+doorTopL.position.set(B.backDoorLeftX+B.doorWidth/2,H-(H-2.6)/2,B.dividerZ); salonGroup.add(doorTopL);
+const doorTopR=doorTopL.clone(); doorTopR.position.set(B.backDoorRightX-B.doorWidth/2,H-(H-2.6)/2,B.dividerZ); salonGroup.add(doorTopR);
+const officeWall=new THREE.Mesh(new THREE.BoxGeometry(0.12,H-1,10),matGlass);
+officeWall.position.set(B.officeWallX,(H-1)/2,-15); salonGroup.add(officeWall);
+scene.add(salonGroup);
+
+Collision.addBox(B.minX-0.2,B.frontDoor.x1,B.maxZ,B.maxZ+0.3,'frontL');
+Collision.addBox(B.frontDoor.x2,B.maxX+0.2,B.maxZ,B.maxZ+0.3,'frontR');
+Collision.addBox(B.minX-0.2,B.minX,B.minZ,B.maxZ,'wallL');
+Collision.addBox(B.maxX,B.maxX+0.2,B.minZ,B.maxZ,'wallR');
+Collision.addBox(B.minX,B.maxX,B.minZ-0.2,B.minZ,'wallBack');
+
+/* ====== PORTAS ====== */
+const doors=[];
+function makeDoor(hingeX,hingeZ,width,baseRotY,name){
+  const pivot=new THREE.Group();
+  pivot.position.set(hingeX,0,hingeZ); pivot.rotation.y=baseRotY;
+  const door=new THREE.Mesh(new THREE.BoxGeometry(width,2.4,0.08),matWood);
+  door.position.set(width/2,1.2,0); door.castShadow=true; pivot.add(door);
+  const glass=new THREE.Mesh(new THREE.BoxGeometry(width*0.6,1.2,0.02),matGlass);
+  glass.position.set(width/2,1.4,0.05); door.add(glass);
+  const knob=new THREE.Mesh(new THREE.SphereGeometry(0.06,8,8),matGold);
+  knob.position.set(width-0.18,1.15,0.08); door.add(knob);
+  scene.add(pivot);
+  const dir = Math.cos(baseRotY) >= 0 ? 1 : -1;
+  const colA = hingeX - 0.05 * dir;
+  const colB = hingeX + dir * (width + 0.05);
+  const col=Collision.addBox(Math.min(colA,colB), Math.max(colA,colB), hingeZ-0.15, hingeZ+0.15, 'door_'+name);
+  const d={pivot,door,width,hingeX,hingeZ,baseRotY,open:false,targetOffset:0,currentOffset:0,col,name};
+  doors.push(d); return d;
+}
+makeDoor(B.backDoorLeftX,B.dividerZ,B.doorWidth,0,'L');
+makeDoor(B.backDoorRightX,B.dividerZ,B.doorWidth,Math.PI,'R');
+
+/* ====== PRATELEIRAS E RECEPÇÃO ====== */
+let shelfId=0;
+function makeShelf(x,z,rot){
+  const g=new THREE.Group();
+  const w=3, d=0.6, levels=3, levelH=0.75;
+  const frame=new THREE.Mesh(new THREE.BoxGeometry(w,levels*levelH+0.4,d),matShelf);
+  frame.position.y=(levels*levelH+0.4)/2; frame.castShadow=true; frame.receiveShadow=true; g.add(frame);
+  for(let i=0;i<levels;i++){
+    const y=0.4+i*levelH+levelH/2;
+    const sh=new THREE.Mesh(new THREE.BoxGeometry(w,0.06,d),matGold);
+    sh.position.y=y; g.add(sh);
+  }
+  const colors=[0xf472b6,0xdb2777,0xa78bfa,0x4ade80,0xfbbf24];
+  for(let lvl=0;lvl<levels;lvl++){
+    const y=0.4+lvl*levelH+levelH/2+0.22;
+    for(let i=0;i<5;i++){
+      const c2=pick(colors);
+      const box=new THREE.Mesh(new THREE.BoxGeometry(0.25,0.35,0.25),new THREE.MeshStandardMaterial({color:c2,roughness:0.4}));
+      box.position.set(-w/2+0.4+i*0.55,y,0); box.castShadow=true; g.add(box);
+    }
+  }
+  g.position.set(x,0,z); g.rotation.y=rot||0; salonGroup.add(g);
+  Collision.addBox(x-w/2,x+w/2,z-0.4,z+0.4,'shelf_'+(shelfId++));
+  return g;
+}
+makeShelf(-7.5,-7,Math.PI/2);
+makeShelf(7.5,-7,-Math.PI/2);
+
+const rc=MAP_CONFIG.poi.receptionDesk;
+const counterReception=new THREE.Mesh(new THREE.BoxGeometry(3.2,1.1,0.9),matWood);
+counterReception.position.set(rc.x,0.55,rc.z); counterReception.castShadow=true; salonGroup.add(counterReception);
+const counterTop=new THREE.Mesh(new THREE.BoxGeometry(3.4,0.08,1.0),matPink);
+counterTop.position.set(rc.x,1.13,rc.z); salonGroup.add(counterTop);
+const computerRec=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.35,0.4),matBlack);
+computerRec.position.set(rc.x+0.8,1.35,rc.z); computerRec.castShadow=true; salonGroup.add(computerRec);
+Collision.addBox(rc.x-1.6,rc.x+1.6,rc.z-0.45,rc.z+0.45,'counterRec');
+
+/* ====== ESCRITÓRIO ====== */
+const od=MAP_CONFIG.poi.officeDesk;
+const officeDesk=new THREE.Mesh(new THREE.BoxGeometry(2,0.75,1),matWood);
+officeDesk.position.set(od.x,0.375,od.z); officeDesk.castShadow=true; salonGroup.add(officeDesk);
+const officeTop=new THREE.Mesh(new THREE.BoxGeometry(2.2,0.06,1.1),matPink);
+officeTop.position.set(od.x,0.78,od.z); salonGroup.add(officeTop);
+const monitor=new THREE.Mesh(new THREE.BoxGeometry(0.6,0.4,0.05),matBlack);
+monitor.position.set(od.x,1.15,od.z-0.3); monitor.rotation.y=Math.PI; salonGroup.add(monitor);
+const monitorScreen=new THREE.Mesh(new THREE.BoxGeometry(0.52,0.32,0.02),new THREE.MeshStandardMaterial({color:0x0a1220,emissive:0xdb2777,emissiveIntensity:0.7}));
+monitorScreen.position.set(od.x,1.15,od.z-0.34); salonGroup.add(monitorScreen);
+Collision.addBox(od.x-1,od.x+1,od.z-0.6,od.z+0.6,'desk');
+
+/* ====== PLAYER ====== */
+const playerGroup=new THREE.Group();
+const bodyMat=new THREE.MeshStandardMaterial({color:0xdb2777,roughness:0.6});
+const pantsMat=new THREE.MeshStandardMaterial({color:0x2d1b24,roughness:0.8});
+const shoeMat=new THREE.MeshStandardMaterial({color:0x111111,roughness:0.9});
+const skinMat=new THREE.MeshStandardMaterial({color:0xf0c8a0,roughness:0.7});
+const torso=new THREE.Mesh(new THREE.BoxGeometry(0.55,0.7,0.3),bodyMat); torso.position.y=1.05; torso.castShadow=true; playerGroup.add(torso);
+const head=new THREE.Mesh(new THREE.BoxGeometry(0.4,0.4,0.35),skinMat); head.position.y=1.65; head.castShadow=true; playerGroup.add(head);
+const hair=new THREE.Mesh(new THREE.BoxGeometry(0.45,0.25,0.4),new THREE.MeshStandardMaterial({color:0x78350f})); hair.position.set(0,1.82,-0.05); playerGroup.add(hair);
+const legL=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.65,0.22),pantsMat); legL.position.set(-0.15,0.35,0); legL.castShadow=true; playerGroup.add(legL);
+const legR=new THREE.Mesh(new THREE.BoxGeometry(0.2,0.65,0.22),pantsMat); legR.position.set(0.15,0.35,0); legR.castShadow=true; playerGroup.add(legR);
+const shoeL=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.1,0.3),shoeMat); shoeL.position.set(-0.15,0.05,0.03); playerGroup.add(shoeL);
+const shoeR=new THREE.Mesh(new THREE.BoxGeometry(0.22,0.1,0.3),shoeMat); shoeR.position.set(0.15,0.05,0.03); playerGroup.add(shoeR);
+const armL=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.6,0.18),bodyMat); armL.position.set(-0.38,1.05,0); armL.castShadow=true; playerGroup.add(armL);
+const armR=new THREE.Mesh(new THREE.BoxGeometry(0.15,0.6,0.18),bodyMat); armR.position.set(0.38,1.05,0); armR.castShadow=true; playerGroup.add(armR);
+const ps=MAP_CONFIG.poi.playerSpawn;
+playerGroup.position.set(ps.x,0,ps.z); scene.add(playerGroup);
+const PLAYER_RADIUS=0.35;
+
+/* ====== STAFF NPCs ====== */
+const staffNPCs={cabeleireiro:[],esteticista:[],gerente:[],recepcionista:[],auxiliar:null};
+function makeStaffNPC(color){
+  const g=new THREE.Group();
+  const bM=new THREE.MeshStandardMaterial({color,roughness:0.6});
+  const b=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.7,0.28),bM); b.position.y=1.0; b.castShadow=true; g.add(b);
+  const h=new THREE.Mesh(new THREE.BoxGeometry(0.36,0.36,0.32),skinMat); h.position.y=1.5; g.add(h);
+  scene.add(g); return g;
+}
+function ensureStaffNPCs(){
+  while(staffNPCs.cabeleireiro.length<Game.staff.cabeleireiro){ const g=makeStaffNPC(0xec4899); g.position.set(-5+staffNPCs.cabeleireiro.length*2,0,4); staffNPCs.cabeleireiro.push({group:g}); }
+  while(staffNPCs.cabeleireiro.length>Game.staff.cabeleireiro){ const s=staffNPCs.cabeleireiro.pop(); scene.remove(s.group); }
+  while(staffNPCs.esteticista.length<Game.staff.esteticista){ const g=makeStaffNPC(0xa78bfa); g.position.set(2+staffNPCs.esteticista.length*2,0,4); staffNPCs.esteticista.push({group:g}); }
+  while(staffNPCs.esteticista.length>Game.staff.esteticista){ const s=staffNPCs.esteticista.pop(); scene.remove(s.group); }
+  if(Game.staff.gerente>0&&!staffNPCs.gerente.length){ const g=makeStaffNPC(0x6366f1); g.position.set(od.x,0,od.z+0.8); staffNPCs.gerente=[{group:g}]; }
+  else if(Game.staff.gerente===0&&staffNPCs.gerente.length){ scene.remove(staffNPCs.gerente[0].group); staffNPCs.gerente=[]; }
+  if(Game.staff.recepcionista>0&&!staffNPCs.recepcionista.length){ const g=makeStaffNPC(0x10b981); g.position.set(rc.x,0,rc.z-0.8); staffNPCs.recepcionista=[{group:g}]; }
+  else if(Game.staff.recepcionista===0&&staffNPCs.recepcionista.length){ scene.remove(staffNPCs.recepcionista[0].group); staffNPCs.recepcionista=[]; }
+}
+
+/* ============ CLIENTES DO SALÃO ============ */
+const clients=[];
+const CLIENT_COLORS=[0xdb2777,0xec4899,0xf472b6,0xa78bfa,0x3b82f6,0x10b981,0xfbbf24,0xffffff];
+function makeClientMesh(color,isVip){
+  const g=new THREE.Group();
+  const cM=new THREE.MeshStandardMaterial({color,roughness:0.6,emissive:isVip?0x3a1060:0x000000,emissiveIntensity:isVip?0.4:0});
+  const b=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.7,0.3),cM); b.position.y=1.0; b.castShadow=true; g.add(b);
+  const h=new THREE.Mesh(new THREE.BoxGeometry(0.38,0.38,0.33),skinMat); h.position.y=1.55; h.castShadow=true; g.add(h);
+  return g;
+}
+
+function createClient(station, order, isAppointment, isVip){
+  const color=pick(CLIENT_COLORS);
+  const g=makeClientMesh(color,isVip);
+  g.position.set(0,0,18); scene.add(g);
+  const ev=Game.getEvent();
+  const patience=((35+Math.random()*20)/Game.state.difficulty)*(ev.patienceMult||1);
+  const vipRoomMultiplier=order.id==='noivasVIP'?2:1;
+  const finalPrice=Math.round(order.price*vipRoomMultiplier*(ev.priceMult||1)*100)/100;
+  
+  // Waypoints com desvio: rua → porta frontal → corredor → estação.
+  // Evita atravessar paredes quando a estação não está alinhada em x=0.
+  const client={
+    group:g, station, state:'walking',
+    waypoints:[
+      {x: 0,          z: 12},
+      {x: 0,          z: 8},
+      {x: station.x,  z: 8},
+      {x: station.x,  z: station.z + 0.5}
+    ],
+    wpIndex:0, patience, maxPatience:patience,
+    order, price:finalPrice, isAppointment:!!isAppointment, isVip:!!isVip,
+    col:Collision.addCircle(0,18,0.35,null),
+    timer:0
+  };
+  station.client=client; clients.push(client);
+  if(isAppointment){
+    notify('🔔 Novo Agendamento: '+(isVip?'VIP · ':'')+order.name, true);
+    SoundSystem.sfx('notif');
+  }
+  return client;
+}
+
+function clearClients(){
+  clients.forEach(c=>{
+    if(c.col){ const i=Collision.circles.indexOf(c.col); if(i>-1)Collision.circles.splice(i,1); }
+    if(c.group&&c.group.parent) c.group.parent.remove(c.group);
+    if(c.station) c.station.client=null;
+  });
+  clients.length=0;
+}
+function clearDeliveries(){}
+
+/* ============ MANUTENÇÃO / LIMPEZA ============ */
+const maintenance=[];
+function spawnDirt(){
+  const z=pick(MAP_CONFIG.dirtZones);
+  const [x,zz]=z;
+  const g=new THREE.Group();
+  const stain=new THREE.Mesh(new THREE.CircleGeometry(0.5,16),new THREE.MeshStandardMaterial({color:0x3a1a2b,roughness:0.95,transparent:true,opacity:0.85}));
+  stain.rotation.x=-Math.PI/2; stain.position.y=0.03; g.add(stain);
+  g.position.set(x,0,zz); scene.add(g);
+  maintenance.push({type:'dirt',x,z:zz,mesh:g,label:'🧹 Limpar piso',fixTime:1.5,ref:null});
+  Game.state.totalMaintenanceSpawned++; updateMaintHUD();
+  notify('🧹 Piso sujo no salão',true);
+}
+function clearMaintenance(){
+  maintenance.forEach(m=>{ if(m.mesh&&m.mesh.parent) m.mesh.parent.remove(m.mesh); });
+  maintenance.length=0; updateMaintHUD();
+}
+function findMaintenanceNearPlayer(){
+  let closest=null, cd=Infinity;
+  maintenance.forEach(m=>{
+    const dx=playerGroup.position.x-m.x, dz=playerGroup.position.z-m.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<cd&&d<2.8){ cd=d; closest=m; }
+  });
+  return closest;
+}
+function completeMaintenance(m){
+  if(!m) return;
+  if(m.type==='dirt'&&Game.state.supplies.cleaning>0) Game.state.supplies.cleaning--;
+  Game.unlockAchievement('cleaner'); SoundSystem.sfx('clean'); showFloat('✨ Salão limpo',m.mesh.position,'maint');
+  if(m.mesh&&m.mesh.parent) m.mesh.parent.remove(m.mesh);
+  const i=maintenance.indexOf(m); if(i>-1) maintenance.splice(i,1);
+  Game.state.maintenanceFixed++; Game.stats.maintenanceFixed++;
+  Game.addReputation(1);
+  if(Game.stats.maintenanceFixed>=10) Game.unlockAchievement('maint_10');
+  updateMaintHUD();
+}
+let currentMaintTask=null;
+function startMaintenance(m){
+  currentMaintTask=m; Game.state.phase='servicing';
+  document.getElementById('maint-lbl').textContent=m.label;
+  document.getElementById('maint-progress').style.width='0%';
+  document.getElementById('maint-panel').classList.add('show');
+  actionBtn.classList.add('disabled');
+  hintEl.style.display='none'; orderBubble.style.display='none';
+}
+function cancelMaintenance(){
+  currentMaintTask=null;
+  document.getElementById('maint-panel').classList.remove('show');
+  if(Game.state.phase==='servicing') Game.state.phase='playing';
+}
+
+/* ============ DEBUG OVERLAY ============ */
+const debugGroup = new THREE.Group();
+debugGroup.visible = false;
+scene.add(debugGroup);
+function buildDebugOverlay(){
+  const b=MAP_CONFIG.bounds;
+  const bGeo=new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(b.minX,0.5,b.minZ), new THREE.Vector3(b.maxX,0.5,b.minZ),
+    new THREE.Vector3(b.maxX,0.5,b.minZ), new THREE.Vector3(b.maxX,0.5,b.maxZ),
+    new THREE.Vector3(b.maxX,0.5,b.maxZ), new THREE.Vector3(b.minX,0.5,b.maxZ),
+    new THREE.Vector3(b.minX,0.5,b.maxZ), new THREE.Vector3(b.minX,0.5,b.minZ)
+  ]);
+  debugGroup.add(new THREE.LineSegments(bGeo,new THREE.LineBasicMaterial({color:0xff00ff})));
+  const colors={street:0x3b82f6,salon:0xec4899,reception:0xfbbf24,storage:0x06b6d4,office:0xa78bfa};
+  for(const k in MAP_CONFIG.zones){
+    const z=MAP_CONFIG.zones[k];
+    const geo=new THREE.BufferGeometry().setFromPoints([
+      new THREE.Vector3(z.minX,0.4,z.minZ), new THREE.Vector3(z.maxX,0.4,z.minZ),
+      new THREE.Vector3(z.maxX,0.4,z.minZ), new THREE.Vector3(z.maxX,0.4,z.maxZ),
+      new THREE.Vector3(z.maxX,0.4,z.maxZ), new THREE.Vector3(z.minX,0.4,z.maxZ),
+      new THREE.Vector3(z.minX,0.4,z.maxZ), new THREE.Vector3(z.minX,0.4,z.minZ)
+    ]);
+    debugGroup.add(new THREE.LineSegments(geo,new THREE.LineBasicMaterial({color:colors[k]||0x888888})));
+  }
+  for(const k in MAP_CONFIG.poi){
+    const p=MAP_CONFIG.poi[k];
+    const s=new THREE.Mesh(new THREE.SphereGeometry(0.3,8,8),new THREE.MeshBasicMaterial({color:0x22d3ee}));
+    s.position.set(p.x,0.4,p.z); debugGroup.add(s);
+  }
+}
+buildDebugOverlay();
+function setDebug(on, silent){
+  Game.state.debugOn=on;
+  debugGroup.visible=on;
+  document.getElementById('debug-panel').classList.toggle('show',on);
+  document.getElementById('debug-btn').classList.toggle('debug-on',on);
+  if(on && !silent) Game.unlockAchievement('debugger');
+  Game.save();
+}
+
+/* ============ INPUT ============ */
+const joyZone=document.getElementById('joystick-zone');
+const joyStick=document.getElementById('joystick-stick');
+let joyActive=false,joyId=null,joyStartX=0,joyStartY=0,joyVecX=0,joyVecY=0;
+const joyMaxRadius=40;
+function joyReset(){ joyActive=false; joyId=null; joyStick.style.transform='translate(0,0)'; joyVecX=0; joyVecY=0; }
+function joyStart(e){
+  const t=e.changedTouches?e.changedTouches[0]:e;
+  joyActive=true; joyId=t.identifier!==undefined?t.identifier:'mouse';
+  const rect=joyZone.getBoundingClientRect();
+  joyStartX=rect.left+rect.width/2; joyStartY=rect.top+rect.height/2;
+  joyMove(e);
+}
+function joyMove(e){
+  if(!joyActive) return;
+  let t;
+  if(e.changedTouches){ t=Array.from(e.changedTouches).find(tt=>tt.identifier===joyId); if(!t) return; }
+  else t=e;
+  let dx=t.clientX-joyStartX, dy=t.clientY-joyStartY;
+  const dist=Math.sqrt(dx*dx+dy*dy);
+  if(dist>joyMaxRadius){ dx=(dx/dist)*joyMaxRadius; dy=(dy/dist)*joyMaxRadius; }
+  joyStick.style.transform=`translate(${dx}px, ${dy}px)`;
+  joyVecX=dx/joyMaxRadius; joyVecY=dy/joyMaxRadius;
+}
+function joyEnd(e){
+  if(e.changedTouches){ const t=Array.from(e.changedTouches).find(tt=>tt.identifier===joyId); if(!t) return; }
+  joyReset();
+}
+joyZone.addEventListener('touchstart',e=>{e.preventDefault();joyStart(e);},{passive:false});
+joyZone.addEventListener('touchmove',e=>{e.preventDefault();joyMove(e);},{passive:false});
+joyZone.addEventListener('touchend',e=>{e.preventDefault();joyEnd(e);},{passive:false});
+joyZone.addEventListener('mousedown',e=>{e.preventDefault();joyStart(e);});
+window.addEventListener('mousemove',e=>{if(joyActive)joyMove(e);});
+window.addEventListener('mouseup',e=>{if(joyActive)joyEnd(e);});
+
+let camAngle=0,camPitch=0.35,camDistance=8,camDistanceTarget=8;
+let camTouchId=null,camLastX=0,camLastY=0;
+renderer.domElement.addEventListener('touchstart',e=>{
+  for(const t of e.changedTouches){
+    const el=document.elementFromPoint(t.clientX,t.clientY);
+    if(el&&(el.closest('#joystick-zone')||el.closest('#action-btn')||el.closest('#cam-btn')||el.closest('#kitchen-panel')||el.closest('.top-btn')||el.closest('.modal')||el.closest('#tutorial-overlay')||el.closest('#maint-panel')||el.closest('#debug-panel'))) continue;
+    if(camTouchId===null){ camTouchId=t.identifier; camLastX=t.clientX; camLastY=t.clientY; }
+  }
+},{passive:false});
+renderer.domElement.addEventListener('touchmove',e=>{
+  if(camTouchId===null) return;
+  const t=Array.from(e.changedTouches).find(tt=>tt.identifier===camTouchId); if(!t) return;
+  if(Game.state.fpMode){
+    playerGroup.rotation.y -= (t.clientX-camLastX)*0.008;
+    camPitch = clamp(camPitch - (t.clientY-camLastY)*0.005, -0.5, 0.5);
+  } else {
+    camAngle -= (t.clientX-camLastX)*0.006;
+    camPitch = clamp(camPitch + (t.clientY-camLastY)*0.005, -0.15, 0.85);
+  }
+  camLastX=t.clientX; camLastY=t.clientY;
+},{passive:false});
+renderer.domElement.addEventListener('touchend',e=>{
+  const t=Array.from(e.changedTouches).find(tt=>tt.identifier===camTouchId);
+  if(t) camTouchId=null;
+});
+let mouseDown=false;
+renderer.domElement.addEventListener('mousedown',e=>{ mouseDown=true; camLastX=e.clientX; camLastY=e.clientY; });
+window.addEventListener('mouseup',()=>{ mouseDown=false; });
+window.addEventListener('mousemove',e=>{
+  if(!mouseDown) return;
+  if(Game.state.fpMode){
+    playerGroup.rotation.y -= (e.clientX-camLastX)*0.008;
+    camPitch = clamp(camPitch - (e.clientY-camLastY)*0.005, -0.5, 0.5);
+  } else {
+    camAngle -= (e.clientX-camLastX)*0.006;
+    camPitch = clamp(camPitch + (e.clientY-camLastY)*0.005, -0.15, 0.85);
+  }
+  camLastX=e.clientX; camLastY=e.clientY;
+});
+document.getElementById('cam-btn').addEventListener('click',()=>{ camAngle=0; camPitch=0.35; });
+
+/* ============ UI ============ */
+const hudMoney=document.getElementById('hud-money');
+const hudRep=document.getElementById('hud-rep');
+const hudServed=document.getElementById('hud-served');
+const hudGoal=document.getElementById('hud-goal');
+const hudTime=document.getElementById('hud-time');
+const hudClock=document.getElementById('hud-clock');
+const hudMaint=document.getElementById('hud-maint');
+const hudZone=document.getElementById('hud-zone');
+const hintEl=document.getElementById('hint');
+const actionBtn=document.getElementById('action-btn');
+const orderBubble=document.getElementById('order-bubble');
+const orderTtl=document.getElementById('order-ttl');
+const orderItem=document.getElementById('order-item');
+const orderPrice=document.getElementById('order-price');
+const orderReq=document.getElementById('order-req');
+const kitchenPanel=document.getElementById('kitchen-panel');
+const kitSteps=document.getElementById('kit-steps');
+const kitBtns=document.getElementById('kit-btns');
+const fuelMinigame=document.getElementById('fuel-minigame');
+const fuelBarZone=document.getElementById('fuel-bar-zone');
+const fuelBarIndicator=document.getElementById('fuel-bar-indicator');
+const fuelTip=document.getElementById('fuel-tip');
+const fuelStopBtn=document.getElementById('fuel-stop-btn');
+const stockBadge=document.getElementById('stock-badge');
+const notifBadge=document.getElementById('notif-badge');
+const notifText=document.getElementById('notif-text');
+const deliveryBar=document.getElementById('delivery-bar');
+const openCloseBtn=document.getElementById('openclose-btn');
+const musicBtn=document.getElementById('music-btn');
+const maintProgress=document.getElementById('maint-progress');
+
+function updateHUD(){
+  const s=Game.state;
+  hudMoney.textContent='R$ '+Math.floor(s.money);
+  hudRep.textContent=Math.round(s.reputation);
+  hudServed.textContent=s.served;
+  hudGoal.textContent='R$ '+s.goal;
+  hudTime.textContent=fmtTime(s.timeLeft);
+  hudTime.classList.toggle('low',s.inShift&&s.timeLeft<=15);
+  hudClock.textContent=fmtClock(s.worldTime);
+  hudMaint.textContent=maintenance.length;
+  const z=zoneAt(playerGroup.position.x, playerGroup.position.z);
+  hudZone.textContent = {street:'Rua',salon:'Salão',reception:'Recepção',storage:'Almox.',office:'Escritório',outside:'—'}[z]||'—';
+}
+function updateMaintHUD(){ updateHUD(); }
+function updateStockBadge(){
+  const low=Object.keys(Game.stock).some(k=>Game.stock[k]<2);
+  const sl=Game.state.supplies.cleaning<1||Game.state.supplies.cosmetics<1||Game.state.supplies.towels<1;
+  stockBadge.style.display=(low||sl)?'flex':'none';
+}
+function updateAchBadge(){
+  const v=Object.values(Game.achievements);
+  const u=v.filter(a=>a.unlocked).length;
+  document.getElementById('ach-btn').style.opacity = (u>0 && u<v.length) ? '1' : '1';
+}
+function updateWeatherBadge(){
+  const ev=Game.getEvent();
+  const badge=document.getElementById('weather-badge');
+  if(ev.id==='normal'){ badge.classList.remove('show'); return; }
+  document.getElementById('weather-icon').textContent=ev.icon;
+  document.getElementById('weather-text').textContent=ev.name;
+  badge.classList.add('show');
+}
+function updateOpenCloseBtn(){
+  const s=Game.state;
+  if(s.isOpen){ openCloseBtn.textContent='🟢'; openCloseBtn.classList.remove('closed'); }
+  else { openCloseBtn.textContent='🔴'; openCloseBtn.classList.add('closed'); }
+}
+function showBanner(html){
+  const el=document.getElementById('day-banner');
+  el.innerHTML=html; el.classList.remove('show'); void el.offsetWidth; el.classList.add('show');
+}
+function showFloat(text,worldPos,cls){
+  const rect=renderer.domElement.getBoundingClientRect();
+  const p=worldPos.clone(); p.y+=2.2; p.project(camera);
+  const el=document.createElement('div');
+  el.className='float-msg '+cls; el.textContent=text;
+  el.style.left=((p.x*0.5+0.5)*rect.width)+'px';
+  el.style.top=((-p.y*0.5+0.5)*rect.height)+'px';
+  container.appendChild(el);
+  setTimeout(()=>el.remove(),1600);
+}
+function showAchievementToast(ach){
+  const el=document.createElement('div');
+  el.style.cssText='position:absolute;top:20%;left:50%;transform:translateX(-50%);background:linear-gradient(180deg,#ffd700,#ec4899);color:#1a1016;padding:12px 20px;border-radius:12px;font-weight:bold;z-index:120;text-align:center;max-width:90%;animation:popIn .3s ease-out;pointer-events:none;';
+  el.innerHTML='🏆 <div style="font-size:.7rem;opacity:.8;">CONQUISTA</div><div style="font-size:.95rem;">'+ach.icon+' '+ach.name+'</div><div style="font-size:.7rem;opacity:.7;">'+ach.desc+'</div>';
+  container.appendChild(el);
+  if(navigator.vibrate) navigator.vibrate([50,50,50]);
+  setTimeout(()=>{ el.style.transition='opacity .5s'; el.style.opacity='0'; setTimeout(()=>el.remove(),500); },3000);
+}
+function syncUI(){ Game.uiOpen=!!document.querySelector('.modal.open'); }
+function openModal(id){ joyReset(); document.getElementById(id).classList.add('open'); syncUI(); SoundSystem.sfx('click'); }
+function closeModal(id){ document.getElementById(id).classList.remove('open'); syncUI(); }
+function notify(msg,temporary){
+  notifText.textContent=msg; notifBadge.classList.add('show');
+  if(temporary) setTimeout(()=>notifBadge.classList.remove('show'),3000);
+}
+function updateAdminTerminal(){
+  const s=Game.state;
+  document.getElementById('term-day').textContent=s.day;
+  document.getElementById('term-money').textContent=fmt(s.money);
+  document.getElementById('term-goal').textContent=fmt(s.goal);
+  document.getElementById('term-rep').textContent=Math.round(s.reputation)+'/100';
+  document.getElementById('term-staff').textContent=Object.values(Game.staff).reduce((a,b)=>a+b,0);
+  document.getElementById('term-maint').textContent=maintenance.length;
+  const unlockedCount = MAP_CONFIG.forecourt.stationPositions.filter(st=>st.unlocked).length;
+  document.getElementById('term-assets').textContent=unlockedCount+' Estações';
+  let st=0; for(const k in Game.stock) st+=Game.stock[k];
+  document.getElementById('term-stock').textContent=st+' un';
+  document.getElementById('term-time').textContent=fmtClock(s.worldTime);
+}
+function enterFPMode(){
+  const s=Game.state;
+  s.fpMode=true;
+  document.body.classList.add('fp-mode');
+  document.getElementById('fp-crosshair').classList.add('show');
+  document.getElementById('fp-badge').classList.add('show');
+  playerGroup.position.set(od.x,0,od.z+0.5);
+  playerGroup.rotation.y=Math.PI;
+  Game.unlockAchievement('chief');
+  updateAdminTerminal();
+  openModal('admin-modal');
+  showBanner('<div class="t">💻 Terminal Administrativo</div>');
+}
+function exitFPMode(){
+  const s=Game.state;
+  if(!s.fpMode) return;
+  s.fpMode=false;
+  document.body.classList.remove('fp-mode');
+  document.getElementById('fp-crosshair').classList.remove('show');
+  document.getElementById('fp-badge').classList.remove('show');
+  closeModal('admin-modal');
+}
+function playerInOfficeZone(){
+  const p=playerGroup.position;
+  return pointInZone(MAP_CONFIG.zones.office,p.x,p.z);
+}
+function playerInsideBuilding(){
+  const p=playerGroup.position;
+  return p.x>B.minX && p.x<B.maxX && p.z>B.minZ && p.z<B.maxZ;
+}
+function playerInStorageZone(){
+  const p=playerGroup.position;
+  return pointInZone(MAP_CONFIG.zones.storage,p.x,p.z);
+}
+
+/* ============ SERVIÇOS E ATENDIMENTO ============ */
+let serviceTarget=null, serviceStepIndex=0;
+let fuelMG={active:false,indicatorPos:0,direction:1,speed:0,zoneStart:0,zoneEnd:0,zonePerfectStart:0,zonePerfectEnd:0,stopped:false};
+let fuelSfxTimer=0;
+
+function getClosestClient(){
+  let closest=null, cd=Infinity;
+  clients.forEach(c=>{
+    if(c.state!=='servicing') return;
+    const dx=playerGroup.position.x-c.group.position.x;
+    const dz=playerGroup.position.z-c.group.position.z;
+    const d=Math.sqrt(dx*dx+dz*dz);
+    if(d<cd&&d<2.8){ cd=d; closest=c; }
+  });
+  return closest;
+}
+
+function showOrderBubbleFor(target){
+  if(!target){ orderBubble.style.display='none'; return; }
+  const o=target.ref.order; const price=target.ref.price; const isVip=target.ref.isVip; const isApp=target.ref.isAppointment;
+  orderTtl.textContent = isApp ? '🔔 Agendamento VIP' : '✨ Cliente Presencial';
+  orderItem.textContent = o.name + (isVip ? ' 👑' : '');
+  orderPrice.textContent = fmt(price);
+  orderReq.style.color='#fce7f3';
+  orderReq.textContent = isApp ? 'Agendado via Notificação' : 'Chegou aleatório no salão';
+  orderBubble.classList.remove('vip','store','delivery','service');
+  orderBubble.classList.add(isVip ? 'vip' : 'service');
+  orderBubble.style.display='block';
+}
+
+function autoStepsFor(order){
+  const a=Game.upgrades.atendimento;
+  return Math.min(a,order.steps.length-1);
+}
+
+function renderServiceSlots(){
+  if(!serviceTarget) return;
+  const o=serviceTarget.ref.order;
+  const next=o.steps[serviceStepIndex];
+  kitSteps.innerHTML=o.icons.map((ic,i)=>'<div class="slot '+(i<serviceStepIndex?'done':i===serviceStepIndex?'next':'')+'">'+ic+'</div>').join('');
+  
+  if(next==='cortar'||next==='aplicar'){
+    kitBtns.innerHTML=''; fuelMinigame.classList.add('show'); startFuelMinigame(); return;
+  } else {
+    fuelMinigame.classList.remove('show'); fuelMG.active=false;
+  }
+  
+  const unique=[...new Set(o.steps)];
+  kitBtns.innerHTML=unique.map(step=>{
+    let icon,label;
+    if(step==='lavar'){icon='🚿';label='Lavar';}
+    else if(step==='cortar'){icon='✂️';label='Cortar';}
+    else if(step==='secar'){icon='💨';label='Secar';}
+    else if(step==='higienizar'){icon='🧴';label='Higienizar';}
+    else if(step==='aplicar'){icon='✨';label='Aplicar';}
+    else if(step==='finalizar'){icon='🧖‍♀️';label='Finalizar';}
+    else if(step==='cobrar'){icon='💳';label='Cobrar';}
+    else {icon='❓';label=step;}
+    return `<div class="kit-btn" data-step="${step}">${icon}<span class="lbl">${label}</span></div>`;
+  }).join('');
+  
+  kitBtns.querySelectorAll('.kit-btn').forEach(btn=>{
+    btn.addEventListener('touchstart',e=>{e.preventDefault();doServiceStep(btn.dataset.step);},{passive:false});
+    btn.addEventListener('mousedown',e=>{e.preventDefault();doServiceStep(btn.dataset.step);});
+  });
+}
+
+function startFuelMinigame(){
+  const zw=20, pw=6;
+  const zs=rand(15,100-zw-5);
+  fuelMG.zoneStart=zs; fuelMG.zoneEnd=zs+zw;
+  const mz=zs+zw/2;
+  fuelMG.zonePerfectStart=mz-pw/2; fuelMG.zonePerfectEnd=mz+pw/2;
+  fuelMG.indicatorPos=0; fuelMG.direction=1;
+  fuelMG.speed=50-Game.upgrades.atendimento*5; fuelMG.active=true; fuelMG.stopped=false;
+  fuelBarZone.style.left=zs+'%'; fuelBarZone.style.width=zw+'%';
+  fuelTip.textContent='Pare o indicador na faixa ideal';
+  fuelStopBtn.disabled=false;
+}
+
+function tickFuelMinigame(dt){
+  if(!fuelMG.active||fuelMG.stopped) return;
+  fuelMG.indicatorPos += fuelMG.direction*fuelMG.speed*dt;
+  if(fuelMG.indicatorPos>=100){fuelMG.indicatorPos=100;fuelMG.direction=-1;}
+  if(fuelMG.indicatorPos<=0){fuelMG.indicatorPos=0;fuelMG.direction=1;}
+  fuelBarIndicator.style.left=fuelMG.indicatorPos+'%';
+  fuelSfxTimer+=dt;
+  if(fuelSfxTimer>0.4){ fuelSfxTimer=0; SoundSystem.sfx('click'); }
+}
+
+function stopFuelMinigame(){
+  if(!fuelMG.active||fuelMG.stopped) return;
+  fuelMG.stopped=true;
+  const pos=fuelMG.indicatorPos;
+  let r='miss';
+  if(pos>=fuelMG.zonePerfectStart&&pos<=fuelMG.zonePerfectEnd) r='perfect';
+  else if(pos>=fuelMG.zoneStart&&pos<=fuelMG.zoneEnd) r='good';
+  fuelStopBtn.disabled=true;
+  if(r==='perfect'){
+    SoundSystem.sfx('success');
+    showFloat('✨ PERFEITO!',playerGroup.position,'gain');
+    const bonus=Math.round(serviceTarget.ref.price*0.2);
+    Game.state.money+=bonus; Game.state.earned+=bonus; updateHUD();
+    setTimeout(()=>advanceServiceStep(),700);
+  } else if(r==='good'){
+    SoundSystem.sfx('coin');
+    showFloat('✔ Muito Bom!',playerGroup.position,'info');
+    setTimeout(()=>advanceServiceStep(),500);
+  } else {
+    SoundSystem.sfx('wrong');
+    showFloat('❌ Escorregou!',playerGroup.position,'loss');
+    if(serviceTarget.ref.price) serviceTarget.ref.price=Math.round(serviceTarget.ref.price*0.9*100)/100;
+    setTimeout(()=>{ fuelMG.stopped=false; startFuelMinigame(); },800);
+  }
+}
+
+function advanceServiceStep(){
+  fuelMG.active=false; fuelMinigame.classList.remove('show');
+  serviceStepIndex++;
+  if(serviceStepIndex>=serviceTarget.ref.order.steps.length){ finishService(); return; }
+  renderServiceSlots();
+}
+
+fuelStopBtn.addEventListener('click',e=>{e.preventDefault();stopFuelMinigame();});
+fuelStopBtn.addEventListener('touchstart',e=>{e.preventDefault();stopFuelMinigame();},{passive:false});
+
+function startService(target){
+  serviceTarget=target; serviceStepIndex=autoStepsFor(target.ref.order);
+  Game.state.phase='servicing';
+  orderBubble.style.display='none'; hintEl.style.display='none';
+  kitchenPanel.style.display='flex'; actionBtn.classList.add('disabled');
+  document.getElementById('kit-title').textContent='Procedimento Estético';
+  renderServiceSlots();
+  SoundSystem.sfx('click');
+}
+
+function cancelService(){
+  kitchenPanel.style.display='none'; fuelMinigame.classList.remove('show'); fuelMG.active=false;
+  serviceTarget=null; serviceStepIndex=0;
+  if(Game.state.phase==='servicing') Game.state.phase='playing';
+}
+
+function doServiceStep(step){
+  if(!serviceTarget||Game.uiOpen) return;
+  const o=serviceTarget.ref.order; const steps=o.steps;
+  if(step===steps[serviceStepIndex]){
+    serviceStepIndex++; SoundSystem.sfx('coin');
+    if(serviceStepIndex>=steps.length) finishService();
+    else renderServiceSlots();
+  } else {
+    serviceStepIndex=0; renderServiceSlots();
+    SoundSystem.sfx('wrong');
+    showFloat('Passo incorreto!',serviceTarget.ref.group.position,'loss');
+  }
+}
+
+function finishService(){
+  const target=serviceTarget; if(!target) return;
+  const s=Game.state;
+  kitchenPanel.style.display='none'; fuelMinigame.classList.remove('show'); fuelMG.active=false;
+  const c=target.ref; const pos=c.group.position;
+  
+  c.state='leaving'; c.timer=0;
+  s.served++; s.totalServed++;
+  Game.stats.clientsServed++;
+  if(c.isAppointment) Game.stats.appointments++;
+  else Game.stats.walkins++;
+  
+  Game.addMoney(c.price);
+  // Evento VIP dobra a reputação ganha
+  const repBase = c.isVip ? 5 : 3;
+  const repGain = (s.eventId === 'vip') ? repBase * 2 : repBase;
+  Game.addReputation(repGain);
+  SoundSystem.sfx('cash');
+  showFloat('+'+fmt(c.price)+' ✨',pos,c.isVip?'vip':'gain');
+  Game.unlockAchievement('first_client');
+  if(c.isAppointment) Game.unlockAchievement('first_appt');
+  if(Game.stats.clientsServed>=50) Game.unlockAchievement('clients_50');
+  
+  if(c.col){ const idx=Collision.circles.indexOf(c.col); if(idx>-1)Collision.circles.splice(idx,1); c.col=null; }
+  if(c.station) c.station.client=null;
+  
+  serviceTarget=null; serviceStepIndex=0;
+  s.phase='playing';
+  updateHUD(); updateStockBadge(); Game.save();
+}
+
+/* ============ ACTION ============ */
+actionBtn.addEventListener('touchstart',e=>{e.preventDefault();actionBtn.classList.add('active');onAction();},{passive:false});
+actionBtn.addEventListener('touchend',e=>{e.preventDefault();actionBtn.classList.remove('active');},{passive:false});
+actionBtn.addEventListener('mousedown',e=>{e.preventDefault();actionBtn.classList.add('active');onAction();});
+actionBtn.addEventListener('mouseup',()=>actionBtn.classList.remove('active'));
+
+function onAction(){
+  if(Game.state.phase!=='playing'||Game.uiOpen||Tutorial.active) return;
+  if(Game.state.fpMode) return;
+  if(playerInOfficeZone()){ SoundSystem.sfx('click'); enterFPMode(); return; }
+  const m=findMaintenanceNearPlayer();
+  if(m){ SoundSystem.sfx('click'); startMaintenance(m); return; }
+  if(!Game.state.isOpen){ SoundSystem.sfx('error'); showFloat('Salão fechado!',playerGroup.position,'loss'); return; }
+  const c=getClosestClient();
+  if(c){ startService({kind:'client',ref:c}); return; }
+}
+
+document.getElementById('kit-cancel').addEventListener('touchstart',e=>{e.preventDefault();cancelService();},{passive:false});
+document.getElementById('kit-cancel').addEventListener('mousedown',e=>{e.preventDefault();cancelService();});
+window.addEventListener('keydown',e=>{
+  if(e.code==='KeyE') onAction();
+  if(e.code==='Escape'&&Game.state.fpMode) exitFPMode();
+  if(e.code==='Backquote') setDebug(!Game.state.debugOn);
+});
+
+/* ============ SPAWN DE CLIENTES ============ */
+let spawnTimer=0, autoStaffTimer=0, autosaveTimer=0, lastSec=-1, maintCheckTimer=0, appointmentTimer=0;
+
+function getSpawnInterval(){
+  const ev=Game.getEvent();
+  return Math.max(2.5,(6-Game.upgrades.marketing*0.8)*(ev.spawnMult||1))/Game.state.difficulty;
+}
+
+function spawnClient(isAppointment){
+  const ph=Game.state.phase;
+  if(ph!=='playing'&&ph!=='servicing') return;
+  if(!Game.state.isOpen) return;
+  
+  const unlockedStations=MAP_CONFIG.forecourt.stationPositions.filter(st=>st.unlocked&&!st.client);
+  if(!unlockedStations.length) return;
+  
+  const station=pick(unlockedStations);
+  const order=buildSalonOrder(isAppointment);
+  const isVip = isAppointment || Math.random()<0.1;
+  
+  createClient(station, order, isAppointment, isVip);
+}
+
+function autoStaffTick(dt){
+  if(Game.staff.cabeleireiro<=0 && Game.staff.esteticista<=0) return;
+  autoStaffTimer+=dt;
+  if(autoStaffTimer<12) return;
+  autoStaffTimer=0;
+  for(const c of clients){
+    if(c.state!=='servicing') continue;
+    if(c===serviceTarget?.ref) continue;
+    c.state='leaving'; c.timer=0;
+    Game.state.served++; Game.state.totalServed++;
+    Game.stats.clientsServed++;
+    Game.addMoney(c.price); Game.addReputation(2);
+    showFloat('🧑‍💼 Equipe +'+fmt(c.price),c.group.position,'info');
+    if(c.col){ const idx=Collision.circles.indexOf(c.col); if(idx>-1)Collision.circles.splice(idx,1); c.col=null; }
+    if(c.station) c.station.client=null;
+    break;
+  }
+}
+
+function maintTick(dt){
+  if(!Game.state.isOpen) return;
+  maintCheckTimer+=dt;
+  if(maintCheckTimer<20) return;
+  maintCheckTimer=0;
+  if(maintenance.length>=3) return;
+  if(Math.random()<0.6) spawnDirt();
+}
+
+/* ============ LOOP ============ */
+const clock=new THREE.Clock();
+const moveSpeed=4.2;
+let maintHoldTime=0;
+
+function updateDoors(dt){
+  doors.forEach(d=>{
+    const cx=d.hingeX+Math.cos(d.baseRotY)*d.width/2;
+    const cz=d.hingeZ+Math.sin(d.baseRotY)*d.width/2;
+    const dist=Math.hypot(playerGroup.position.x-cx,playerGroup.position.z-cz);
+    const should = dist<2.2;
+    if(should!==d.open){
+      d.open=should;
+      d.targetOffset=d.open?Math.PI/2:0;
+      d.col.active=!d.open;
+      SoundSystem.sfx('door');
+    }
+    d.currentOffset += (d.targetOffset-d.currentOffset)*Math.min(1,dt*6);
+    d.pivot.rotation.y=d.baseRotY+d.currentOffset;
+  });
+}
+
+function updateInteractionUI(){
+  const ph=Game.state.phase;
+  if(Game.uiOpen||Tutorial.active){ hintEl.style.display='none'; orderBubble.style.display='none'; return; }
+  if(Game.state.fpMode){ hintEl.style.display='none'; orderBubble.style.display='none'; actionBtn.classList.add('disabled'); return; }
+  if(ph==='servicing'){ hintEl.style.display='none'; actionBtn.classList.add('disabled'); actionBtn.classList.remove('store-mode','delivery-mode','service-mode','maint-mode','admin-mode'); return; }
+  if(ph!=='playing'){ hintEl.style.display='none'; orderBubble.style.display='none'; actionBtn.classList.add('disabled'); return; }
+  if(playerInOfficeZone()){
+    actionBtn.classList.remove('disabled','store-mode','delivery-mode','service-mode','maint-mode');
+    actionBtn.classList.add('admin-mode'); actionBtn.textContent='💻';
+    hintEl.style.display='block'; hintEl.textContent='💻 Acessar Terminal do Salão';
+    orderBubble.style.display='none'; return;
+  }
+  const m=findMaintenanceNearPlayer();
+  if(m){
+    actionBtn.classList.remove('disabled','store-mode','delivery-mode','service-mode','admin-mode');
+    actionBtn.classList.add('maint-mode'); actionBtn.textContent='🧹';
+    hintEl.style.display='block'; hintEl.textContent=m.label+' (segure)';
+    orderBubble.style.display='none'; return;
+  }
+  actionBtn.textContent='✨';
+  if(!Game.state.isOpen){
+    hintEl.style.display='block'; hintEl.textContent='🔴 Salão FECHADO';
+    actionBtn.classList.add('disabled');
+    actionBtn.classList.remove('store-mode','delivery-mode','service-mode','maint-mode','admin-mode');
+    orderBubble.style.display='none'; return;
+  }
+  const c=getClosestClient();
+  if(c){
+    actionBtn.classList.remove('disabled'); actionBtn.classList.add('service-mode');
+    actionBtn.classList.remove('store-mode','delivery-mode','maint-mode','admin-mode');
+    hintEl.style.display='block'; hintEl.textContent='✨ Atender cliente';
+    showOrderBubbleFor({ref:c}); return;
+  }
+  actionBtn.classList.add('disabled');
+  actionBtn.classList.remove('store-mode','delivery-mode','service-mode','maint-mode','admin-mode');
+  orderBubble.style.display='none';
+  if(playerInsideBuilding()){
+    hintEl.style.display='block';
+    if(playerInStorageZone()) hintEl.textContent='📦 Almoxarifado de Produtos';
+    else if(playerInOfficeZone()) hintEl.textContent='💼 Escritório / Recepção';
+    else hintEl.textContent='💇‍♀️ Salão de Atendimento';
+  } else hintEl.style.display='none';
+}
+
+function updateDebugPanel(){
+  if(!Game.state.debugOn) return;
+  document.getElementById('dbg-pos').textContent=playerGroup.position.x.toFixed(1)+', '+playerGroup.position.z.toFixed(1);
+  document.getElementById('dbg-zone').textContent=zoneAt(playerGroup.position.x,playerGroup.position.z);
+  document.getElementById('dbg-cars').textContent=clients.length;
+  document.getElementById('dbg-doors').textContent=doors.filter(d=>d.open).length+'/'+doors.length;
+  document.getElementById('dbg-cols').textContent=Collision.boxes.length+'+'+Collision.circles.length;
+}
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=Math.min(clock.getDelta(),0.1);
+  const ph=Game.state.phase;
+  const running=(ph==='playing'||ph==='servicing')&&!Game.uiOpen&&!Tutorial.active&&!Game.state.fpMode;
+
+  const isMoving = (Math.abs(joyVecX)>0.15||Math.abs(joyVecY)>0.15)&&ph!=='servicing'&&!Game.uiOpen&&!Game.state.fpMode;
+  if(isMoving){
+    const f=-joyVecY, r=joyVecX;
+    const mag=Math.sqrt(f*f+r*r);
+    const sc2=Math.min(mag,1)/mag;
+    const ff=f*sc2, rr=r*sc2;
+    const fwdX=-Math.sin(camAngle), fwdZ=-Math.cos(camAngle);
+    const rgtX=Math.cos(camAngle), rgtZ=-Math.sin(camAngle);
+    const wx=fwdX*ff+rgtX*rr, wz=fwdZ*ff+rgtZ*rr;
+    let nx=playerGroup.position.x+wx*moveSpeed*dt;
+    let nz=playerGroup.position.z+wz*moveSpeed*dt;
+    const res=Collision.resolvePlayer(nx,nz,PLAYER_RADIUS);
+    nx=clamp(res.x,MAP_CONFIG.bounds.minX+0.5,MAP_CONFIG.bounds.maxX-0.5);
+    nz=clamp(res.z,MAP_CONFIG.bounds.minZ+0.5,MAP_CONFIG.bounds.maxZ-0.5);
+    playerGroup.position.x=nx; playerGroup.position.z=nz;
+    const target=Math.atan2(wx,wz);
+    let diff=target-playerGroup.rotation.y;
+    while(diff>Math.PI) diff-=Math.PI*2;
+    while(diff<-Math.PI) diff+=Math.PI*2;
+    playerGroup.rotation.y+=diff*12*dt;
+    const t=performance.now()*0.012;
+    armL.rotation.x=Math.sin(t)*0.6; armR.rotation.x=-Math.sin(t)*0.6;
+    legL.rotation.x=Math.sin(t)*0.4; legR.rotation.x=-Math.sin(t)*0.4;
+  } else {
+    armL.rotation.x*=0.85; armR.rotation.x*=0.85;
+    legL.rotation.x*=0.85; legR.rotation.x*=0.85;
+  }
+
+  const inside=playerInsideBuilding();
+  camDistanceTarget=inside?5.0:8.0;
+  camDistance+=(camDistanceTarget-camDistance)*Math.min(1,dt*2);
+  if(Game.state.fpMode){
+    camera.position.set(playerGroup.position.x,playerGroup.position.y+1.7,playerGroup.position.z);
+    const y=playerGroup.rotation.y;
+    camera.lookAt(playerGroup.position.x+Math.sin(y)*3,playerGroup.position.y+1.7+Math.sin(camPitch)*1.5,playerGroup.position.z+Math.cos(y)*3);
+  } else {
+    const tx=playerGroup.position.x+Math.sin(camAngle)*camDistance*Math.cos(camPitch);
+    const ty=playerGroup.position.y+2.2+Math.sin(camPitch)*camDistance;
+    const tz=playerGroup.position.z+Math.cos(camAngle)*camDistance*Math.cos(camPitch);
+    const dx=tx-camera.position.x, dy=ty-camera.position.y, dz=tz-camera.position.z;
+    const d=Math.sqrt(dx*dx+dy*dy+dz*dz);
+    const resp=isMoving&&Math.abs(joyVecX)+Math.abs(joyVecY)>0.5?4.5:2.5;
+    const lf=1-Math.exp(-(resp+d*0.4)*dt);
+    camera.position.x+=dx*lf; camera.position.y+=dy*lf; camera.position.z+=dz*lf;
+    const look=isMoving?0.4:0;
+    camera.lookAt(playerGroup.position.x+Math.sin(playerGroup.rotation.y)*look,playerGroup.position.y+1.2,playerGroup.position.z+Math.cos(playerGroup.rotation.y)*look);
+  }
+
+  updateDoors(dt);
+
+  if(running){
+    Game.state.timeLeft-=dt;
+    Game.state.worldTime+=(dt/Game.state.shiftLength)*Game.state.worldLength;
+    const sec=Math.ceil(Game.state.timeLeft);
+    if(sec!==lastSec){ lastSec=sec; updateHUD(); updateDayNightLighting(); }
+    if(Game.state.isOpen){
+      spawnTimer+=dt;
+      if(spawnTimer>getSpawnInterval()){ spawnTimer=0; spawnClient(false); }
+      
+      appointmentTimer+=dt;
+      if(appointmentTimer>getSpawnInterval()*1.8){ appointmentTimer=0; spawnClient(true); }
+    }
+    maintTick(dt); autoStaffTick(dt);
+    autosaveTimer+=dt;
+    if(autosaveTimer>10){ autosaveTimer=0; Game.save(); }
+    if(Game.state.timeLeft<=0){ Game.state.timeLeft=0; Game.endShift(); }
+  }
+  if(fuelMG.active && running) tickFuelMinigame(dt);
+
+  if(currentMaintTask){
+    if(actionBtn.classList.contains('active')){
+      maintHoldTime+=dt;
+      const p=Math.min(1,maintHoldTime/currentMaintTask.fixTime);
+      maintProgress.style.width=(p*100)+'%';
+      if(p>=1){ const t=currentMaintTask; cancelMaintenance(); completeMaintenance(t); maintHoldTime=0; }
+    } else {
+      maintHoldTime=Math.max(0,maintHoldTime-dt*2);
+      maintProgress.style.width=(Math.min(1,maintHoldTime/currentMaintTask.fixTime)*100)+'%';
+      if(maintHoldTime<=0.01){ cancelMaintenance(); maintHoldTime=0; }
+    }
+  }
+
+  for(let i=clients.length-1;i>=0;i--){
+    const c=clients[i];
+    if(c.col){ c.col.x=c.group.position.x; c.col.z=c.group.position.z; }
+    if(c.state==='walking' && c.wpIndex<c.waypoints.length){
+      const wp=c.waypoints[c.wpIndex];
+      const dx=wp.x-c.group.position.x, dz=wp.z-c.group.position.z;
+      const dist=Math.sqrt(dx*dx+dz*dz);
+      if(dist>0.1){
+        c.group.position.x+=(dx/dist)*3.0*dt;
+        c.group.position.z+=(dz/dist)*3.0*dt;
+        c.group.rotation.y=Math.atan2(dx,dz);
+      } else {
+        c.wpIndex++;
+        if(c.wpIndex>=c.waypoints.length) c.state='servicing';
+      }
+    } else if(c.state==='servicing'){
+      c.group.rotation.y=Math.atan2(playerGroup.position.x-c.group.position.x,playerGroup.position.z-c.group.position.z);
+      if(running&&c!==serviceTarget?.ref){
+        c.patience-=dt;
+        if(c.patience<=0){
+          c.state='leaving'; c.timer=0;
+          if(c.col){ const idx=Collision.circles.indexOf(c.col); if(idx>-1)Collision.circles.splice(idx,1); c.col=null; }
+          Game.loseMoney(12); Game.addReputation(-3);
+          Game.state.lostClients++; Game.state.totalLost++;
+          showFloat('-R$ 12,00 💔',c.group.position,'loss');
+          if(c.station) c.station.client=null;
+        }
+      }
+    } else if(c.state==='leaving'){
+      c.timer+=dt; c.group.position.z+=4*dt;
+      if(c.col){ const idx=Collision.circles.indexOf(c.col); if(idx>-1)Collision.circles.splice(idx,1); c.col=null; }
+      if(c.group.position.z>MAP_CONFIG.bounds.maxZ-1){ scene.remove(c.group); if(c.station) c.station.client=null; clients.splice(i,1); }
+    }
+  }
+
+  Object.keys(staffNPCs).forEach(k=>{
+    const arr=staffNPCs[k];
+    if(Array.isArray(arr)) arr.forEach((w,i)=>{ if(w.group) w.group.visible=(i<Game.staff[k]); });
+  });
+
+  updateDebugPanel();
+  updateInteractionUI();
+  if(Game.state.fpMode && document.getElementById('admin-modal').classList.contains('open')) updateAdminTerminal();
+  renderer.render(scene,camera);
+}
+
+/* ============ TUTORIAL ============ */
+const Tutorial={
+  steps:[
+    {ttl:'Bem-vindo ao Salão',msg:'Você é o dono do <b>Salão de Beleza & Estética</b>! Vamos aos detalhes.'},
+    {ttl:'Movimento',msg:'Use o <span class="k">JOYSTICK</span> para caminhar pelo salão.'},
+    {ttl:'Notificações',msg:'Clientes agendam horários via <span class="k">NOTIFICAÇÃO</span> na tela. Você também recebe clientes presenciais aleatórios!'},
+    {ttl:'Estações',msg:'Atenda nas cadeiras de cabelo ou macas de depilação/spa. Aproximando-se, toque em <span class="k">✨</span>.'},
+    {ttl:'Expansão',msg:'Compre e desbloqueie novas cadeiras e macas no escritório ou na loja para faturar mais.'},
+    {ttl:'Escritório',msg:'Vá até a mesa no fundo (direita) e acesse o terminal com <span class="k">💻</span>.'},
+    {ttl:'Boa sorte!',msg:'Deixe suas clientes lindas e bata a meta do dia! 💅'}
+  ],
+  currentStep:0,active:false,
+  start(){ this.currentStep=0; this.active=true; joyReset(); document.getElementById('tutorial-overlay').classList.add('show'); this.render(); },
+  next(){ this.currentStep++; if(this.currentStep>=this.steps.length) this.finish(); else this.render(); },
+  finish(){ this.active=false; document.getElementById('tutorial-overlay').classList.remove('show'); Game.state.tutorialDone=true; Game.save(); },
+  render(){
+    const s=this.steps[this.currentStep];
+    document.getElementById('tutorial-ttl').textContent='Passo '+(this.currentStep+1)+'/'+this.steps.length+' · '+s.ttl;
+    document.getElementById('tutorial-msg').innerHTML=s.msg;
+    document.getElementById('tutorial-progress').innerHTML=this.steps.map((_,i)=>'<div class="dot '+(i<this.currentStep?'done':i===this.currentStep?'active':'')+'"></div>').join('');
+    document.getElementById('tutorial-next').textContent=this.currentStep===this.steps.length-1?'🎉 Entendi!':'Continuar ▶';
+  }
+};
+document.getElementById('tutorial-next').addEventListener('click',()=>Tutorial.next());
+document.getElementById('tutorial-skip').addEventListener('click',()=>Tutorial.finish());
+
+/* ============ LOJA & UPGRADES ============ */
+const UPGRADES=[
+  {id:'cadeira',ico:'💺',name:'Conforto nas Estações',desc:'Atendimento mais ágil.',base:400},
+  {id:'produtos',ico:'🧴',name:'Estoque Ampliado',desc:'+15 limite de cosméticos.',base:500},
+  {id:'atendimento',ico:'✨',name:'Técnica Avançada',desc:'Mini-game mais fácil.',base:450},
+  {id:'marketing',ico:'📣',name:'Marketing Digital',desc:'Mais agendamentos e clientes.',base:350},
+  {id:'caixa',ico:'💳',name:'Caixa Rápido',desc:'Bônus em gorjetas.',base:500},
+  {id:'decoracao',ico:'🌸',name:'Decoração Luxo',desc:'Paciência das clientes +15%.',base:300}
+];
+const STAFF_LIST=[
+  {id:'cabeleireiro',ico:'💇‍♀️',name:'Cabeleireira',desc:'Atende cadeiras automaticamente.',base:220,weekly:Math.round(220*7*0.7)},
+  {id:'esteticista',ico:'💆‍♀️',name:'Esteticista',desc:'Atende macas de spa e depilação.',base:250,weekly:Math.round(250*7*0.7)},
+  {id:'gerente',ico:'👔',name:'Gerente',desc:'+10% em todos os serviços.',base:300,weekly:Math.round(300*7*0.7)},
+  {id:'recepcionista',ico:'👩‍💼',name:'Recepcionista',desc:'Organiza agendamentos VIP.',base:200,weekly:Math.round(200*7*0.7)},
+  {id:'auxiliar',ico:'🧹',name:'Auxiliar de Limpeza',desc:'Mantém o salão sempre limpo.',base:230,weekly:Math.round(230*7*0.7)}
+];
+
+function renderShop(tab){
+  if(tab==='chairs'){
+    document.getElementById('shop-tab-chairs').innerHTML=MAP_CONFIG.forecourt.stationPositions.map((st,i)=>{
+      if(st.unlocked) return `<div class="shop-item"><div class="ico">${st.type==='maca'?'🛏️':'💺'}</div><div class="info"><div class="name">${st.name}</div><div class="sub">Status: Desbloqueada e Ativa</div></div><button class="buy-btn" disabled>Ativa</button></div>`;
+      return `<div class="shop-item"><div class="ico">${st.type==='maca'?'🛏️':'💺'}</div><div class="info"><div class="name">${st.name}</div><div class="sub">Expanda seu salão</div></div><button class="buy-btn" data-station="${i}">Desbloquear<br><small>R$ ${st.price}</small></button></div>`;
+    }).join('') + `<div style="margin-top:14px;color:#f472b6;font-size:.75rem;font-weight:bold;">🧺 INSUMOS & LIMPEZA</div>`
+    + SUPPLIES_LIST.map(s=>{
+      const qty=Game.state.supplies[s.id]||0;
+      return `<div class="shop-item"><div class="ico">${s.ico}</div><div class="info"><div class="name">${s.name}</div><div class="sub">${s.desc} · Tem: ${qty}</div></div><button class="buy-btn" data-supply="${s.id}">+1<br><small>R$ ${s.cost}</small></button></div>`;
+    }).join('');
+  } else if(tab==='stock'){
+    const cap=Game.getStockCapacity();
+    document.getElementById('shop-tab-stock').innerHTML=COSMETIC_IDS.map(p=>{
+      const pr=COSMETICS[p], qty=Game.stock[p]||0;
+      return `<div class="shop-item"><div class="ico">${pr.icon}</div><div class="info"><div class="name">${pr.name}</div><div class="sub">Custo: R$ ${pr.cost.toFixed(2)} · ${qty}/${cap}</div></div><button class="buy-btn" data-buy="${p}">+5<br><small>R$ ${(pr.cost*5).toFixed(2)}</small></button></div>`;
+    }).join('');
+  } else {
+    document.getElementById('shop-tab-upgrade').innerHTML=UPGRADES.map(u=>{
+      const lvl=Game.upgrades[u.id]||0, price=Math.round(u.base*Math.pow(1.6,lvl)), max=lvl>=5;
+      return `<div class="upgrade-item"><div class="head"><div class="ico">${u.ico}</div><div class="name">${u.name}</div><div class="lvl">Nv ${lvl}/5</div></div>
+        <div class="desc">${u.desc}</div>
+        <div class="foot"><div class="price">${max?'MAX':'R$ '+price.toFixed(2)}</div>
+        <button class="buy-btn" data-upg="${u.id}" ${max?'disabled':''}>${max?'✓':'Comprar'}</button></div></div>`;
+    }).join('');
+  }
+}
+
+function renderOffice(){
+  const today=Game.state.day;
+  document.getElementById('office-content').innerHTML=STAFF_LIST.map(s=>{
+    const lvl=Game.staff[s.id]||0, exp=Game.contracts[s.id]||0;
+    const active=lvl>0&&exp>today;
+    const t=active?` (expira dia ${exp})`:'';
+    return `<div class="upgrade-item"><div class="head"><div class="ico">${s.ico}</div><div class="name">${s.name}${t}</div><div class="lvl">Ativos: ${lvl}/3</div></div>
+      <div class="desc">${s.desc}</div>
+      <div class="contracts">
+        <button data-staff="${s.id}" data-contract="1" ${lvl>=3?'disabled':''}>1 dia<br><small>R$ ${s.base}</small></button>
+        <button class="week" data-staff="${s.id}" data-contract="7" ${lvl>=3?'disabled':''}>7 dias<br><small>R$ ${s.weekly}</small></button>
+      </div></div>`;
+  }).join('');
+}
+
+function renderRooms(){
+  const s=Game.state;
+  document.getElementById('rooms-content').innerHTML=Object.entries(ROOM_CONFIG).map(([id,cfg])=>{
+    const r=Game.rooms[id];
+    const lockedByRep=cfg.repRequired && s.reputation<cfg.repRequired;
+    const status=!r.owned?'Disponível para locação':r.active?'Ativa · próxima cobrança no dia '+r.nextRentDay:'Fechada / suspensa';
+    const debt=r.arrears>0?`<div class="desc" style="color:#fbbf24">Débito: ${fmt(r.arrears)}</div>`:'';
+    let action='';
+    if(!r.owned) action=`<button class="buy-btn" data-room-rent="${id}" ${lockedByRep?'disabled':''}>Alugar<br><small>${fmt(cfg.entry)}</small></button>`;
+    else if(r.active) action=`<button class="buy-btn" data-room-pause="${id}">Pausar</button>`;
+    else action=`<button class="buy-btn" data-room-open="${id}">${r.arrears?'Regularizar':'Reabrir'}<br><small>${r.arrears?fmt(r.arrears):'Sem taxa'}</small></button>`;
+    return `<div class="upgrade-item"><div class="head"><div class="ico">${cfg.icon}</div><div class="name">${cfg.name}</div><div class="lvl">${r.active?'ATIVA':r.owned?'ALUGADA':'NOVA'}</div></div><div class="desc">${cfg.desc}</div><div class="desc">${status}<br>Entrada: ${fmt(cfg.entry)} · Aluguel semanal: ${fmt(cfg.rent)}</div>${lockedByRep&&!r.owned?`<div class="desc" style="color:#fbbf24">Requer reputação ${cfg.repRequired} (atual: ${Math.round(s.reputation)})</div>`:''}${debt}<div class="foot">${action}</div></div>`;
+  }).join('');
+}
+function rentRoom(id){
+  const cfg=ROOM_CONFIG[id], r=Game.rooms[id], s=Game.state; if(!cfg||!r||r.owned) return;
+  if(cfg.repRequired&&s.reputation<cfg.repRequired){notify('⭐ A sala VIP exige reputação '+cfg.repRequired,true);return;}
+  if(s.money<cfg.entry){noMoney();return;}
+  Game.spendMoney(cfg.entry,true); r.owned=true; r.active=true; r.arrears=0; r.nextRentDay=s.day+7;
+  SoundSystem.sfx('cash'); showFloat('🏠 Sala alugada!',playerGroup.position,'gain'); renderRooms(); Game.save();
+}
+function openRoom(id){
+  const r=Game.rooms[id]; if(!r||!r.owned) return;
+  const total=r.arrears; if(Game.state.money<total){noMoney();return;}
+  if(total>0) Game.spendMoney(total,false);
+  r.arrears=0; r.active=true; r.nextRentDay=Game.state.day+7;
+  SoundSystem.sfx('cash'); renderRooms(); Game.save();
+}
+function pauseRoom(id){const r=Game.rooms[id];if(!r)return;r.active=false;renderRooms();Game.save();}
+
+function noMoney(){ SoundSystem.sfx('error'); showFloat('SEM DINHEIRO!',playerGroup.position,'loss'); }
+
+function unlockStation(index){
+  const st=MAP_CONFIG.forecourt.stationPositions[index];
+  if(!st||st.unlocked) return;
+  if(Game.state.money<st.price){ noMoney(); return; }
+  SoundSystem.sfx('cash'); Game.spendMoney(st.price,true);
+  st.unlocked=true;
+  rebuildStations();
+  // Conquista específica para macas
+  if(st.type==='maca') Game.unlockAchievement('maca_unlocked');
+  renderShop('chairs'); Game.save();
+  showFloat('✨ Estação desbloqueada!',playerGroup.position,'gain');
+}
+
+function buySupply(id){
+  const s=SUPPLIES_LIST.find(x=>x.id===id); if(!s) return;
+  if(Game.state.money<s.cost){ noMoney(); return; }
+  SoundSystem.sfx('coin'); Game.spendMoney(s.cost,false);
+  Game.state.supplies[id]=(Game.state.supplies[id]||0)+1;
+  renderShop('chairs'); updateStockBadge(); Game.save();
+}
+
+function buyCosmeticItem(item,qty){
+  const cost=COSMETICS[item].cost*qty;
+  if(Game.state.money<cost){ noMoney(); return; }
+  SoundSystem.sfx('coin'); Game.spendMoney(cost,false);
+  const cap=Game.getStockCapacity();
+  Game.stock[item]=Math.min(cap,(Game.stock[item]||0)+qty);
+  renderShop('stock'); Game.save();
+}
+
+function buyUpgrade(id){
+  const u=UPGRADES.find(x=>x.id===id); if(!u) return;
+  const lvl=Game.upgrades[id]||0; if(lvl>=5) return;
+  const price=Math.round(u.base*Math.pow(1.6,lvl));
+  if(Game.state.money<price){ noMoney(); return; }
+  SoundSystem.sfx('coin'); Game.spendMoney(price,true); Game.upgrades[id]++;
+  if(Game.upgrades[id]>=5) Game.unlockAchievement('upgrade_max');
+  renderShop('upgrade'); Game.save();
+}
+
+function hireStaff(id,days){
+  const st=STAFF_LIST.find(x=>x.id===id); if(!st) return;
+  const lvl=Game.staff[id]||0; if(lvl>=3) return;
+  const price=days===1?st.base:st.weekly;
+  if(Game.state.money<price){ noMoney(); return; }
+  SoundSystem.sfx('cash'); Game.spendMoney(price,true); Game.staff[id]++;
+  const today=Game.state.day; const cur=Game.contracts[id]||0;
+  const base = (cur >= today) ? cur : (today - 1);
+  Game.contracts[id]=base+days;
+  ensureStaffNPCs();
+  if(STAFF_LIST.every(s=>Game.staff[s.id]>=3)) Game.unlockAchievement('staff_full');
+  renderOffice(); Game.save();
+}
+
+function renderAchievements(){
+  document.getElementById('ach-list').innerHTML=Object.values(Game.achievements).map(a=>`
+    <div class="ach-item ${a.unlocked?'unlocked':''}"><div class="ico">${a.icon}</div>
+      <div class="info"><div class="name">${a.name}</div><div class="desc">${a.desc}</div></div></div>`).join('');
+}
+
+function renderStats(){
+  const s=Game.stats, r=(l,v)=>`<div class="stat-row"><span class="lbl">${l}</span><span class="val">${v}</span></div>`;
+  document.getElementById('stats-content').innerHTML=
+    r('Dias',s.daysPlayed)+r('Dia atual',Game.state.day)+
+    r('Clientes',Game.state.totalServed)+r('Melhor dia',s.bestDay)+
+    r('Dias perfeitos',s.perfectDays)+r('Atendimentos',s.clientsServed)+
+    r('Agendamentos VIP',s.appointments)+r('Presenciais',s.walkins)+
+    r('Manutenções',s.maintenanceFixed)+
+    r('Ganho total',fmt(s.totalEarned))+r('Gasto total',fmt(s.totalSpent))+
+    r('Clientes perdidos',Game.state.totalLost)+
+    r('Conquistas',Object.values(Game.achievements).filter(a=>a.unlocked).length+'/'+Object.keys(Game.achievements).length);
+}
+
+function beginShiftUI(){
+  applyEnv(); updateHUD(); updateStockBadge(); updateWeatherBadge(); updateOpenCloseBtn();
+  spawnTimer=0; autoStaffTimer=0; lastSec=-1; maintCheckTimer=0; appointmentTimer=0;
+  ensureStaffNPCs();
+  const s=Game.state, ev=Game.getEvent();
+  showBanner('<div class="t">Dia '+s.day+' — Salão Aberto</div>'+
+    (ev.id==='normal'?'':'<div class="e">'+ev.icon+' '+ev.name+'</div>')+
+    '<div class="g">Meta: R$ '+s.goal+' · Tempo: '+fmtTime(s.timeLeft)+'</div>');
+  spawnClient(true); spawnClient(false);
+}
+
+/* ============ HANDLERS DE UI ============ */
+document.getElementById('menu-btn').addEventListener('click',()=>{
+  const s=Game.state, ev=Game.getEvent();
+  document.getElementById('menu-day').textContent=s.day;
+  document.getElementById('menu-time').textContent=fmtTime(s.timeLeft);
+  document.getElementById('menu-clock').textContent=fmtClock(s.worldTime);
+  document.getElementById('menu-open').textContent=s.isOpen?'🟢 Aberto':'🔴 Fechado';
+  document.getElementById('menu-money').textContent=fmt(s.money);
+  document.getElementById('menu-rep').textContent=Math.round(s.reputation);
+  document.getElementById('menu-served').textContent=s.served;
+  document.getElementById('menu-goal').textContent=fmt(s.goal);
+  document.getElementById('menu-zone').textContent=zoneAt(playerGroup.position.x,playerGroup.position.z);
+  document.getElementById('menu-maint').textContent=maintenance.length;
+  document.getElementById('menu-event').textContent=ev.icon+' '+ev.name;
+  openModal('menu-modal');
+});
+document.getElementById('menu-resume').addEventListener('click',()=>closeModal('menu-modal'));
+document.getElementById('menu-stats').addEventListener('click',()=>{ closeModal('menu-modal'); renderStats(); openModal('stats-modal'); });
+document.getElementById('menu-end').addEventListener('click',()=>{ if(confirm('Encerrar?')){ closeModal('menu-modal'); Game.endShift(); } });
+document.getElementById('menu-restart').addEventListener('click',()=>{ if(confirm('Reiniciar dia?')){ closeModal('menu-modal'); Game.restartDay(); } });
+
+openCloseBtn.addEventListener('click',()=>{
+  const s=Game.state;
+  if(s.phase!=='playing'&&s.phase!=='servicing') return;
+  s.isOpen=!s.isOpen; updateOpenCloseBtn();
+  SoundSystem.sfx(s.isOpen?'success':'error');
+  if(!s.isOpen){ showBanner('<div class="t">🔴 Salão Fechado</div>'); notify('🔴 Salão Fechado para novos clientes',true); }
+  else { showBanner('<div class="t">🟢 Salão Aberto</div>'); notify('🟢 Salão Aberto!',true); }
+});
+
+musicBtn.addEventListener('click',()=>{
+  const p=SoundSystem.toggleMusic();
+  Game.state.musicOn=p;
+  musicBtn.textContent=p?'🎵':'🔇';
+  musicBtn.classList.toggle('muted',!p);
+  if(p) showTrackName();
+  Game.save();
+});
+
+document.getElementById('debug-btn').addEventListener('click',()=>{ setDebug(!Game.state.debugOn); });
+document.getElementById('shop-btn').addEventListener('click',()=>{ renderShop('chairs'); openModal('shop-modal'); });
+document.getElementById('shop-close').addEventListener('click',()=>closeModal('shop-modal'));
+
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    const t=tab.dataset.tab;
+    ['chairs','stock','upgrade'].forEach(k=>document.getElementById('shop-tab-'+k).style.display=(t===k?'block':'none'));
+    renderShop(t); SoundSystem.sfx('click');
+  });
+});
+
+document.getElementById('shop-modal').addEventListener('click',e=>{
+  const b=e.target.closest('.buy-btn'); if(!b) return;
+  if(b.dataset.station!==undefined) unlockStation(parseInt(b.dataset.station));
+  else if(b.dataset.supply) buySupply(b.dataset.supply);
+  else if(b.dataset.buy) buyCosmeticItem(b.dataset.buy,5);
+  else if(b.dataset.upg) buyUpgrade(b.dataset.upg);
+});
+
+document.getElementById('office-btn').addEventListener('click',()=>{ renderOffice(); openModal('office-modal'); });
+document.getElementById('rooms-btn').addEventListener('click',()=>{ renderRooms(); openModal('rooms-modal'); });
+document.getElementById('rooms-close').addEventListener('click',()=>closeModal('rooms-modal'));
+document.getElementById('rooms-modal').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  if(b.dataset.roomRent) rentRoom(b.dataset.roomRent);
+  else if(b.dataset.roomOpen) openRoom(b.dataset.roomOpen);
+  else if(b.dataset.roomPause) pauseRoom(b.dataset.roomPause);
+});
+document.getElementById('office-close').addEventListener('click',()=>closeModal('office-modal'));
+document.getElementById('office-modal').addEventListener('click',e=>{
+  const b=e.target.closest('.contracts button'); if(!b) return;
+  if(b.dataset.staff) hireStaff(b.dataset.staff,parseInt(b.dataset.contract));
+});
+
+document.getElementById('ach-btn').addEventListener('click',()=>{ renderAchievements(); openModal('ach-modal'); });
+document.getElementById('ach-close').addEventListener('click',()=>closeModal('ach-modal'));
+document.getElementById('stats-close').addEventListener('click',()=>closeModal('stats-modal'));
+document.getElementById('next-day-btn').addEventListener('click',()=>Game.nextDay());
+document.getElementById('restart-all-btn').addEventListener('click',()=>Game.restartAll());
+document.getElementById('admin-exit').addEventListener('click',()=>exitFPMode());
+
+document.getElementById('admin-modal').addEventListener('click',e=>{
+  const b=e.target.closest('.term-btn'); if(!b) return;
+  const a=b.dataset.admin;
+  SoundSystem.sfx('click');
+  if(a==='shop-chairs'){ renderShop('chairs'); openModal('shop-modal'); }
+  else if(a==='shop-stock'){ renderShop('stock'); openModal('shop-modal'); }
+  else if(a==='office'){ renderOffice(); openModal('office-modal'); }
+  else if(a==='upgrades'){ renderShop('upgrade'); openModal('shop-modal'); }
+  else if(a==='stats'){ renderStats(); openModal('stats-modal'); }
+  else if(a==='ach'){ renderAchievements(); openModal('ach-modal'); }
+});
+
+function onResize(){
+  camera.aspect=window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth,window.innerHeight);
+}
+window.addEventListener('resize',onResize);
+window.addEventListener('orientationchange',()=>setTimeout(onResize,200));
+window.addEventListener('pagehide',()=>Game.save());
+document.addEventListener('visibilitychange',()=>{ if(document.hidden) Game.save(); });
+
+function refreshWelcome(){
+  const s=Game.state, info=document.getElementById('save-info'), btn=document.getElementById('start-btn');
+  if(s.inShift){ info.textContent='💾 Em andamento · Dia '+s.day+' · '+fmt(s.money); btn.textContent='▶ CONTINUAR'; }
+  else if(s.shiftDone){ info.textContent='💾 Dia '+s.day+' concluído'; btn.textContent='▶ PRÓXIMO DIA'; }
+  else if(s.day>1||s.totalServed>0){ info.textContent='💾 Save · Dia '+s.day; btn.textContent='▶ CONTINUAR'; }
+  else { info.textContent=''; btn.textContent='▶ JOGAR'; }
+}
+
+Game.load();
+updateHUD(); updateStockBadge(); updateWeatherBadge(); updateOpenCloseBtn(); applyEnv();
+setDebug(Game.state.debugOn===true, true);
+refreshWelcome();
+if(Game.state.musicOn===false){ musicBtn.textContent='🔇'; musicBtn.classList.add('muted'); }
+
+document.getElementById('start-btn').addEventListener('click',()=>{
+  if(Tutorial.active) Tutorial.finish();
+  SoundSystem.init(); SoundSystem.resume();
+  if(Game.state.musicOn!==false) SoundSystem.startMusic(0);
+  const w=document.getElementById('welcome');
+  w.style.opacity='0';
+  setTimeout(()=>{ w.style.display='none'; },400);
+  const s=Game.state;
+  if(s.inShift) Game.resumeShift();
+  else if(s.shiftDone) Game.nextDay();
+  else Game.startShift();
+});
+document.getElementById('tutorial-btn').addEventListener('click',()=>{ SoundSystem.sfx('click'); Tutorial.start(); });
+
+ensureStaffNPCs();
+animate();
+</script>
+</body>
+</html>
